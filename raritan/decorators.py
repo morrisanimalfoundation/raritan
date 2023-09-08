@@ -1,15 +1,14 @@
 import importlib
 import os
+import random
 import sys
 import types
-import random
 from functools import wraps
 
 from rich.console import Console
 
 from raritan.context import context
 from raritan.logger import get_logger
-
 
 """
 Provides decorators for our ETL processes.
@@ -257,4 +256,3 @@ def _get_settings() -> types.ModuleType:
         message = 'Missing required module settings (settings.py). Check out default_settings.py for an example.'
         raise ModuleNotFoundError(message)
     return settings
-
