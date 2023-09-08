@@ -124,7 +124,7 @@ def task(*args, **kwargs):
                 logger.success('Completed task: %s', original_function.__name__)
                 return output
             except Exception:
-                console.print_exception(show_locals=True)
+                console.print_exception(show_locals=True, max_frames=1)
                 # We want all the flows to run even if one fails.
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
@@ -208,9 +208,9 @@ def output_data(*args, **kwargs):
             # todo validate this.
             for path, assets in output_map.items():
                 for file_name, asset in assets.items():
-                    full_path = f'{path}/{file_name}'
                     data = context.get_data_reference(asset['data'] if 'data' in asset.keys() else file_name)
                     for extension in asset['formats']:
+                        full_path = f'{path}/{file_name}.{extension}'
                         logger.info(f'Beginning output: {full_path}')
                         settings.output_handler(full_path, extension, data, **asset['output_kwargs'])
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
