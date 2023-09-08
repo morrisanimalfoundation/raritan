@@ -1,9 +1,8 @@
 import pandas as pd
 
-from raritan.decorators import flow, input_data, output_data, task
-from raritan.context import context
-
 import settings
+from raritan.context import context
+from raritan.decorators import flow, input_data, output_data, task
 
 
 @input_data(parallel=False)
