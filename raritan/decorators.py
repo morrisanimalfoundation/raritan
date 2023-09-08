@@ -1,8 +1,8 @@
 import importlib
 import os
-from threading import Thread
 import sys
 import types
+import random
 from functools import wraps
 
 from rich.console import Console
@@ -55,9 +55,9 @@ def flow(*args, **kwargs):
     """
 
     def _flow(original_function):
-        name = kwargs.get('name', get_file_name_from_function(original_function))
+        name = kwargs.get('name', _get_file_name_from_function(original_function))
         context.set_flow_id(name)
-        settings = get_settings()
+        settings = _get_settings()
         context.set_release_spec_name(settings.release_spec)
 
         # Make sure the original function's docstring is available through help.
@@ -68,7 +68,8 @@ def flow(*args, **kwargs):
             logger.info('Release spec: [bold]%s[/bold]', context.release_spec_name, extra={"markup": True})
             try:
                 output = original_function(*args, **kwargs)
-                logger.success('Completed flow run! :dog:', extra={"markup": True})
+                emoji = random.choice(('cat', 'dog', 'horse', 'gorilla'))
+                logger.success(f'Completed flow run! :{emoji}:', extra={"markup": True})
                 return output
             except Exception:
                 console.print_exception(show_locals=True)
@@ -96,6 +97,11 @@ def task(*args, **kwargs):
 
     Task implements an optional kwarg task_description. This kwarg overrides the default task name.
     It is meant for use cases where a task is being called dynamically.
+
+    Keyword Arguments
+    -----------------
+    task_description: str
+       Optionally override the name of the task output to the terminal.
 
     Returns
     -------
@@ -134,13 +140,25 @@ def task(*args, **kwargs):
 
 
 def input_data(*args, **kwargs):
-    is_parallel = kwargs.get('parallel', False)
+    """
+    Loads a dictionary of assets into the context object for the run.
+
+    Keyword Arguments
+    -----------------
+    analyze: str
+       Optionally provide the host repo the option to analyze assets.
+
+    Returns
+    -------
+    A callable which is the original function with decoration.
+    """
+    analyze = kwargs.get('analyze', True)
 
     def _input(original_function):
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
-            settings = get_settings()
-            data_sources = []
+            settings = _get_settings()
+            logger = get_logger()
             sources = original_function(*args, **kwargs)
             # todo validate structure here.
             for path, assets in sources.items():
@@ -152,22 +170,13 @@ def input_data(*args, **kwargs):
                     path_bits = os.path.splitext(full_path)
                     extension = path_bits[1] if path_bits[1] else ''
                     extension = extension.replace('.', '')
-                    data_sources.append({
-                        'name': name,
-                        'full_path': full_path,
-                        'extension': extension,
-                    })
-            if is_parallel:
-                processes = []
-                for asset in data_sources:
-                    this_process = Thread(target=_load_asset_set_context, args=(settings, context, asset))
-                    this_process.start()
-                    processes.append(this_process)
-                for process in processes:
-                    process.join()
-            else:
-                for asset in data_sources:
-                    _load_asset_set_context(settings, context, asset)
+                    logger.info(f'Handling asset: {full_path}')
+                    data = settings.input_handler(full_path, extension)
+                    context.set_data_reference(name, data)
+                    if analyze and hasattr(settings, 'analyze_asset_handler'):
+                        settings.analyze_asset_handler(full_path, extension, data)
+                    else:
+                        logger.success(f'Finished asset: {full_path}')
         return wrapper_function
 
     # If no arguments are passed to the decorator, return the wrapper one level down.
@@ -176,51 +185,46 @@ def input_data(*args, **kwargs):
     return _input
 
 
-def _load_asset_set_context(settings, active_context, asset):
-    data = settings.input_handler(asset['full_path'], asset['extension'])
-    active_context.set_data_reference(asset['name'], data)
-
-
 def output_data(*args, **kwargs):
-    is_parallel = kwargs.get('parallel', False)
+    """
+    Output a dictionary of assets from the context object in a variety of formats.
+
+    Keyword Arguments
+    -----------------
+    analyze: str
+       Optionally provide the host repo the option to analyze assets.
+
+    Returns
+    -------
+    A callable which is the original function with decoration.
+    """
+    analyze = kwargs.get('analyze', True)
 
     def _output(original_function):
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
-            settings = get_settings()
+            settings = _get_settings()
+            logger = get_logger()
             output_map = original_function(*args, **kwargs)
             # todo validate this.
-            flattened_assets = []
             for path, assets in output_map.items():
                 for file_name, asset in assets.items():
-                    asset['full_path'] = f'{path}/{file_name}'
-                    asset['data'] = context.get_data_reference(asset['data'] if 'data' in asset.keys() else file_name)
-                    flattened_assets.append(asset)
-            if is_parallel:
-                processes = []
-                for asset in flattened_assets:
+                    full_path = f'{path}/{file_name}'
+                    data = context.get_data_reference(asset['data'] if 'data' in asset.keys() else file_name)
                     for extension in asset['formats']:
-                        this_process = Thread(target=_output_data, args=(settings, asset, extension))
-                        this_process.start()
-                        processes.append(this_process)
-                for process in processes:
-                    process.join()
-            else:
-                for asset in flattened_assets:
-                    for extension in asset['formats']:
-                        _output_data(settings, asset, extension)
-
+                        logger.info(f'Beginning output: {full_path}')
+                        settings.output_handler(full_path, extension, data, **asset['output_kwargs'])
+                        if analyze and hasattr(settings, 'analyze_asset_handler'):
+                            settings.analyze_asset_handler(full_path, extension, data)
+                        else:
+                            logger.info(f'Finished output: {full_path}')
         return wrapper_function
     if len(args) > 0 and callable(args[0]):
         return _output(args[0])
     return _output
 
 
-def _output_data(settings, asset, extension):
-    settings.output_handler(asset['full_path'], extension, asset['data'], **asset['output_kwargs'])
-
-
-def get_file_name_from_function(function: callable) -> str:
+def _get_file_name_from_function(function: callable) -> str:
     """
     Gets the parent module's file name, minus extension for a given function.
 
@@ -239,7 +243,14 @@ def get_file_name_from_function(function: callable) -> str:
     return flow_file[0]
 
 
-def get_settings() -> types.ModuleType:
+def _get_settings() -> types.ModuleType:
+    """
+    Get the settings module and provide a helpful message, if not found.
+
+    Returns
+    -------
+    The active settings module.
+    """
     try:
         settings = importlib.import_module('settings')
     except ModuleNotFoundError:
