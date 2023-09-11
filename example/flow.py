@@ -4,9 +4,16 @@ import settings
 from raritan.context import context
 from raritan.decorators import flow, input_data, output_data, task
 
+"""
+A very simple sample flow that requires some additional setup to actually run.
+"""
+
 
 @input_data(parallel=False)
 def get_data() -> dict:
+    """
+    Gets our flow data and stores it inside the context object.
+    """
     return {
         settings.input_dir: {
             'labs_ongoing': 'labs_ongoing.csv',
@@ -20,6 +27,13 @@ def get_data() -> dict:
 
 @task
 def transform_data():
+    """
+    A place to do some work.
+
+    Notes
+    -----
+    If this work becomes lengthy, we try to use a separate cleaning module.
+    """
     data = [
         context.get_data_reference('labs_ongoing'),
         context.get_data_reference('labs_historical'),
@@ -30,6 +44,9 @@ def transform_data():
 
 @output_data
 def output_data() -> dict:
+    """
+    Outputs the data from context with csv and sql strategies.
+    """
     return {
         settings.output_dir: {
             'complete_labs': {
@@ -42,6 +59,9 @@ def output_data() -> dict:
 
 @flow
 def run_flow() -> None:
+    """
+    Executes our flow in the defined sequence.
+    """
     get_data()
     transform_data()
     output_data()

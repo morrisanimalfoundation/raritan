@@ -63,10 +63,28 @@ class Context(object):
         """
         self.no_logging = no_logging
 
-    def set_data_reference(self, name, data_source):
+    def set_data_reference(self, name: str, data_source) -> None:
+        """
+        Sets an item in the context's list of data references.
+
+        Parameters
+        ----------
+        name: str
+            The name by which to access the data reference.
+        data_source
+            The data source of mixed type.
+        """
         self.data_references[name] = data_source
 
     def get_data_reference(self, name):
+        """
+        Gets a datasource reference or throws if one is not found.
+
+        Parameters
+        ----------
+        name: str
+            The name by which to access the data reference.
+        """
         if name not in self.data_references.keys():
             raise RuntimeError(f'Requested unloaded datasource, {name}. Was it included in @import_data?')
         return self.data_references[name]

@@ -159,7 +159,6 @@ def input_data(*args, **kwargs):
             settings = _get_settings()
             logger = get_logger()
             sources = original_function(*args, **kwargs)
-            # todo validate structure here.
             for path, assets in sources.items():
                 for name, file_name in assets.items():
                     full_path = f'{path}/{file_name}'
@@ -205,7 +204,6 @@ def output_data(*args, **kwargs):
             settings = _get_settings()
             logger = get_logger()
             output_map = original_function(*args, **kwargs)
-            # todo validate this.
             for path, assets in output_map.items():
                 for file_name, asset in assets.items():
                     data = context.get_data_reference(asset['data'] if 'data' in asset.keys() else file_name)
