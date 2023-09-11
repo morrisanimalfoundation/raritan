@@ -45,7 +45,7 @@ def flow(*args, **kwargs):
 
     Keyword Arguments
     -----------------
-    name: str
+    flow_id: str
         A flow name override.
 
     Returns
@@ -54,7 +54,7 @@ def flow(*args, **kwargs):
     """
 
     def _flow(original_function):
-        name = kwargs.get('name', _get_file_name_from_function(original_function))
+        name = kwargs.get('flow_id', _get_file_name_from_function(original_function))
         context.set_flow_id(name)
         settings = _get_settings()
         context.set_release_spec_name(settings.release_spec)
