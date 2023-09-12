@@ -1,0 +1,23 @@
+name: Lint And Sort
+
+on:
+  push:
+    paths:
+      - '*.py'
+
+jobs:
+  flake8_py3:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7.4
+          architecture: x64
+      - name: Install flake8 and isort
+        run: pip install flake8 isort
+      - name: Run script file
+        run: |
+          chmod +x ./sort_and_lint.sh
+          ./sort_and_lint.sh
+        shell: bash
