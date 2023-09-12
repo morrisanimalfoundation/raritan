@@ -197,7 +197,6 @@ def output_data(*args, **kwargs):
     A callable which is the original function with decoration.
     """
     analyze = kwargs.get('analyze', True)
-
     def _output(original_function):
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
