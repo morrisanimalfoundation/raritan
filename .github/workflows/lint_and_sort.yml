@@ -30,6 +30,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8 and isort
       run: |
+        touch settings.py
         chmod +x sort_and_lint.sh
         ./sort_and_lint.sh > results.txt
         cat results.txt >> $GITHUB_STEP_SUMMARY 
