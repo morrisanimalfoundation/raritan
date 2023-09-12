@@ -1,5 +1,5 @@
 # Raritan
-This repository houses core utilities for Morris Animal Foundation data projects. It's named after the [Raritan Hospital for Animals](https://www.morrisanimalfoundation.org/article/building-history-foundation-celebrates-70-years), a veterinary practice run by Dr. Mark L. Morris Sr. In that facility and community Dr. Morris learned and grew his skills, while making several innovative breakthroughs in companion animal health. It is our goal to embody that spirit of leaning, growth and innovation. 
+This repository houses core utilities for Morris Animal Foundation data projects. It's named after the [Raritan Hospital for Animals](https://www.morrisanimalfoundation.org/article/building-history-foundation-celebrates-70-years), a veterinary practice run by Dr. Mark L. Morris Sr. In that facility and community Dr. Morris learned and grew his skills, while making several innovative breakthroughs in companion animal health. It is our goal to embody that spirit of learning, growth and innovation. 
 
 These utilities are meant to be very lightweight and allow the ETL itself to implement most of the heavy lifting. Much of the value provided is in lending ETL flows a narrative structure that is easy to read and understand.
 
