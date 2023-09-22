@@ -51,14 +51,16 @@ def flow(*args, **kwargs):
         name = kwargs.get('flow_id', _get_file_name_from_function(original_function))
         context.set_flow_id(name)
         settings = context.get_settings()
-        context.set_release_spec_name(settings.release_spec)
+        if hasattr(settings, 'release_spec'):
+            context.set_release_spec_name(settings.release_spec)
 
         # Make sure the original function's docstring is available through help.
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
             start = datetime.now()
             logger.info(f'Beginning flow: [bold]{name}[/bold]')
-            logger.info(f'Release spec: [bold]{context.release_spec_name}[/bold]')
+            if context.release_spec_name:
+                logger.info(f'Release spec: [bold]{context.release_spec_name}[/bold]')
             start_string = start.strftime('%Y-%m-%d %H:%m:%S')
             logger.info(f'Started: {start_string}')
             try:
@@ -73,9 +75,7 @@ def flow(*args, **kwargs):
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
                 quit()
-
         return wrapper_function
-
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _flow(args[0])
@@ -115,9 +115,7 @@ def task(*args, **kwargs):
             context.set_current_task(original_function.__name__)
             try:
                 duration, output = _time_function(original_function, *args, **kwargs)
-                # Same as above.
-                # Only log if we are in a flow context.
-                logger.success(f'Completed task: {original_function.__name__} {duration}')
+                logger.success(f'Completed task: {task_description} {duration}')
                 return output
             except Exception:
                 logger.console.print_exception(show_locals=True, max_frames=1)
@@ -125,9 +123,7 @@ def task(*args, **kwargs):
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
                 quit()
-
         return wrapper_function
-
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _task(args[0])
@@ -167,12 +163,11 @@ def input_data(*args, **kwargs):
                     duration, data = _time_function(settings.input_handler, *[full_path, extension])
                     context.set_data_reference(name, data)
                     if analyze and hasattr(settings, 'analyze_asset_handler'):
-                        message = settings.analyze_asset_handler(full_path, extension, data, duration)
+                        message = settings.analyze_asset_handler(full_path, extension, data, duration, 'input')
                         logger.success(message)
                     else:
                         logger.success(f'Loaded asset: {full_path} {duration}')
         return wrapper_function
-
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _input(args[0])
@@ -208,13 +203,11 @@ def output_data(*args, **kwargs):
                         duration, output = _time_function(settings.output_handler, *[full_path, extension, data],
                                                           **asset['output_kwargs'])
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
-                            message = settings.analyze_asset_handler(full_path, extension, data, duration)
+                            message = settings.analyze_asset_handler(full_path, extension, data, duration, 'output')
                             logger.success(message)
                         else:
                             logger.success(f'Finished output: {full_path} {duration}')
-
         return wrapper_function
-
     if len(args) > 0 and callable(args[0]):
         return _output(args[0])
     return _output
