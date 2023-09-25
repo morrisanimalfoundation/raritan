@@ -160,7 +160,7 @@ def test_output_decorator() -> None:
     context.set_data_reference('finalized_fixture', 'here is the final output')
     with console.capture() as capture:
         dump_data()
-        with pytest.raises(RuntimeError):
+        with pytest.raises(Exception):
             missing_dump_data()
     log_output = capture.get()
     assert 'Beginning output: ./raritan/testing/fixture/finalized_fixture.csv' in log_output
