@@ -1,3 +1,6 @@
+import importlib
+import types
+
 """
 Provides a context pseudo-singleton to store information about our flow run.
 """
@@ -12,12 +15,18 @@ class Context(object):
     If we want a different structure for this data in the future, we could definitely consider that.
     """
 
-    def __init__(self):
-        self.data_references = {}
-        self.release_spec_name = None
-        self.flow_id = None
-        self.current_task = None
-        self.no_logging = False
+    # A place to stash data during the flow run.
+    data_references = {}
+    # The active release specification.
+    release_spec_name = None
+    # The active flow id.
+    flow_id = None
+    # The current task/step of the flow.
+    current_task = None
+    # Disable logging/output.
+    no_logging = False
+    # The namespace to find ETL settings.
+    settings_module = 'settings'
 
     def set_release_spec_name(self, release_spec_name: str) -> None:
         """
@@ -76,7 +85,7 @@ class Context(object):
         """
         self.data_references[name] = data_source
 
-    def get_data_reference(self, name):
+    def get_data_reference(self, name: str):
         """
         Gets a datasource reference or throws if one is not found.
 
@@ -88,6 +97,32 @@ class Context(object):
         if name not in self.data_references.keys():
             raise RuntimeError(f'Requested unloaded datasource, {name}. Was it included in @import_data?')
         return self.data_references[name]
+
+    def set_settings_module(self, module_name: str) -> None:
+        """
+        Sets the ETL settings namespace.
+
+        Parameters
+        ----------
+        module_name: str
+          The module name.
+        """
+        self.settings_module = module_name
+
+    def get_settings(self) -> types.ModuleType:
+        """
+        Get the settings module and provide a helpful message, if not found.
+
+        Returns
+        -------
+        The active settings module.
+        """
+        try:
+            settings = importlib.import_module(self.settings_module)
+        except ModuleNotFoundError:
+            message = 'Missing required module settings (settings.py). Check out default_settings.py for an example.'
+            raise ModuleNotFoundError(message)
+        return settings
 
 
 # The instance of Context that should be manipulated by the system.

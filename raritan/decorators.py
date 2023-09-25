@@ -1,21 +1,15 @@
-import importlib
 import os
 import random
 import sys
-import types
+from datetime import datetime
 from functools import wraps
 
-from rich.console import Console
-
+from raritan import logger
 from raritan.context import context
-from raritan.logger import get_logger
 
 """
 Provides decorators for our ETL processes.
 """
-
-# Create a rich console object for us to format stack traces.
-console = Console()
 
 
 def flow(*args, **kwargs):
@@ -56,29 +50,32 @@ def flow(*args, **kwargs):
     def _flow(original_function):
         name = kwargs.get('flow_id', _get_file_name_from_function(original_function))
         context.set_flow_id(name)
-        settings = _get_settings()
-        context.set_release_spec_name(settings.release_spec)
+        settings = context.get_settings()
+        if hasattr(settings, 'release_spec'):
+            context.set_release_spec_name(settings.release_spec)
 
         # Make sure the original function's docstring is available through help.
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
-            logger = get_logger()
-            logger.info('Beginning flow: [bold]%s[/bold]', name, extra={"markup": True})
-            logger.info('Release spec: [bold]%s[/bold]', context.release_spec_name, extra={"markup": True})
+            start = datetime.now()
+            logger.info(f'Beginning flow: [bold]{name}[/bold]')
+            if context.release_spec_name:
+                logger.info(f'Release spec: [bold]{context.release_spec_name}[/bold]')
+            start_string = start.strftime('%Y-%m-%d %H:%m:%S')
+            logger.info(f'Started: {start_string}')
             try:
-                output = original_function(*args, **kwargs)
+                duration, output = _time_function(original_function, *args, **kwargs)
                 emoji = random.choice(('cat', 'dog', 'horse', 'gorilla'))
-                logger.success(f'Completed flow run! :{emoji}:', extra={"markup": True})
+                logger.success(f'Completed flow run! :{emoji}:')
+                logger.info(f'Total duration {duration}')
                 return output
             except Exception:
-                console.print_exception(show_locals=True)
+                logger.console.print_exception(show_locals=True)
                 # We want all the flows to run even if one fails.
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
                 quit()
-
         return wrapper_function
-
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _flow(args[0])
@@ -114,24 +111,19 @@ def task(*args, **kwargs):
             task_description = kwargs.get('task_description', original_function.__name__)
             if kwargs.get('task_description'):
                 del kwargs['task_description']
-            logger = get_logger()
-            logger.info('Beginning task: %s', task_description)
+            logger.info(f'Beginning task: {task_description}')
             context.set_current_task(original_function.__name__)
             try:
-                output = original_function(*args, **kwargs)
-                # Same as above.
-                # Only log if we are in a flow context.
-                logger.success('Completed task: %s', original_function.__name__)
+                duration, output = _time_function(original_function, *args, **kwargs)
+                logger.success(f'Completed task: {task_description} {duration}')
                 return output
             except Exception:
-                console.print_exception(show_locals=True, max_frames=1)
+                logger.console.print_exception(show_locals=True, max_frames=1)
                 # We want all the flows to run even if one fails.
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
                 quit()
-
         return wrapper_function
-
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _task(args[0])
@@ -156,8 +148,7 @@ def input_data(*args, **kwargs):
     def _input(original_function):
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
-            settings = _get_settings()
-            logger = get_logger()
+            settings = context.get_settings()
             sources = original_function(*args, **kwargs)
             for path, assets in sources.items():
                 for name, file_name in assets.items():
@@ -169,14 +160,14 @@ def input_data(*args, **kwargs):
                     extension = path_bits[1] if path_bits[1] else ''
                     extension = extension.replace('.', '')
                     logger.info(f'Handling asset: {full_path}')
-                    data = settings.input_handler(full_path, extension)
+                    duration, data = _time_function(settings.input_handler, *[full_path, extension])
                     context.set_data_reference(name, data)
                     if analyze and hasattr(settings, 'analyze_asset_handler'):
-                        settings.analyze_asset_handler(full_path, extension, data)
+                        message = settings.analyze_asset_handler(full_path, extension, data, duration, 'input')
+                        logger.success(message)
                     else:
-                        logger.success(f'Finished asset: {full_path}')
+                        logger.success(f'Loaded asset: {full_path} {duration}')
         return wrapper_function
-
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _input(args[0])
@@ -201,8 +192,7 @@ def output_data(*args, **kwargs):
     def _output(original_function):
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
-            settings = _get_settings()
-            logger = get_logger()
+            settings = context.get_settings()
             output_map = original_function(*args, **kwargs)
             for path, assets in output_map.items():
                 for file_name, asset in assets.items():
@@ -210,11 +200,13 @@ def output_data(*args, **kwargs):
                     for extension in asset['formats']:
                         full_path = f'{path}/{file_name}.{extension}'
                         logger.info(f'Beginning output: {full_path}')
-                        settings.output_handler(full_path, extension, data, **asset['output_kwargs'])
+                        duration, output = _time_function(settings.output_handler, *[full_path, extension, data],
+                                                          **asset['output_kwargs'])
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
-                            settings.analyze_asset_handler(full_path, extension, data)
+                            message = settings.analyze_asset_handler(full_path, extension, data, duration, 'output')
+                            logger.success(message)
                         else:
-                            logger.info(f'Finished output: {full_path}')
+                            logger.success(f'Finished output: {full_path} {duration}')
         return wrapper_function
     if len(args) > 0 and callable(args[0]):
         return _output(args[0])
@@ -240,17 +232,58 @@ def _get_file_name_from_function(function: callable) -> str:
     return flow_file[0]
 
 
-def _get_settings() -> types.ModuleType:
+def _time_function(func: callable, *args, **kwargs) -> tuple:
     """
-    Get the settings module and provide a helpful message, if not found.
+    Times the execution of a function.
+
+    Parameters
+    ----------
+    func: callable
+      A function to time.
+    args: list
+      Args to pass to the function.
+    kwargs: dict
+      Kwargs to pass to the function.
 
     Returns
     -------
-    The active settings module.
+    A tuple the first element of which is a formatted string of duration.
+      The second element is the return value of the provided function.
     """
-    try:
-        settings = importlib.import_module('settings')
-    except ModuleNotFoundError:
-        message = 'Missing required module settings (settings.py). Check out default_settings.py for an example.'
-        raise ModuleNotFoundError(message)
-    return settings
+
+    start = datetime.now()
+    output = func(*args, **kwargs)
+    end = datetime.now()
+    return _get_formatted_duration(start, end), output
+
+
+def _get_formatted_duration(start: datetime, end: datetime) -> str:
+    """
+    Formats the difference between two datetimes in hours, minutes and seconds.
+
+    Parameters
+    ----------
+    start: datetime
+      The start datetime.
+    end: datetime
+      The end datetime.
+
+    Returns
+    -------
+    duration: str
+      The formatted difference between the datetimes.
+    """
+    output = ''
+    seconds = (end - start).total_seconds()
+    hours = seconds // 3600
+    minutes = (seconds - (hours * 3600)) // 60
+    seconds = round(seconds - ((hours * 3600) + (minutes * 60)))
+    if hours > 0:
+        output += f'{hours}h'
+    if minutes > 0:
+        output += f'{minutes}m'
+    if seconds > 0:
+        output += f'{seconds}s'
+    if hours + minutes + seconds == 0:
+        output = '<1s'
+    return output
