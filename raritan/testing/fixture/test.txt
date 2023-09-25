@@ -1,0 +1,1 @@
+A tiny fixture for testing IO.
