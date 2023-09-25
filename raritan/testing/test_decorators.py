@@ -19,6 +19,14 @@ settings = context.get_settings()
 
 @input_data
 def get_data() -> dict:
+    """
+    A @input_data implementation.
+
+    Returns
+    -------
+    data: dict
+      A dict of data to load into context.
+    """
     return {
         settings.data_dir: {
             'test_fixture': 'test.txt'
@@ -27,7 +35,15 @@ def get_data() -> dict:
 
 
 @input_data
-def missing_input_data():
+def missing_input_data() -> dict:
+    """
+    A bad @input_data implementation to test the unhappy path.
+
+    Returns
+    -------
+    data: dict
+      A dict of data to load into context.
+    """
     return {
         settings.data_dir: {
             'test_fixture': 'velcro.txt'
@@ -36,13 +52,29 @@ def missing_input_data():
 
 
 @task
-def transform_data(a, b) -> tuple:
+def transform_data(a: int, b: int) -> tuple:
+    """
+    A @task implementation.
+
+    Returns
+    -------
+    data: tuple
+      A sum and product of the provideed values.
+    """
     sleep(1)
     return a + b, a * b
 
 
 @output_data
 def dump_data() -> dict:
+    """
+    An @output_data implementation.
+
+    Returns
+    -------
+    data: tuple
+      Data to dump from the context object.
+    """
     return {
         settings.data_dir: {
             'finalized_fixture': {
@@ -59,6 +91,14 @@ def dump_data() -> dict:
 
 @output_data
 def missing_dump_data() -> dict:
+    """
+    A bad @output_data implementation to test the unhappy path.
+
+    Returns
+    -------
+    data: tuple
+      Data to dump from the context object.
+    """
     return {
         settings.data_dir: {
             'missing_some_stuff': {
@@ -68,14 +108,21 @@ def missing_dump_data() -> dict:
         },
     }
 
+
 @flow
 def run_flow() -> None:
+    """
+    A @flow implementation that puts all the above together.
+    """
     get_data()
     transform_data(2, 3)
     dump_data()
 
 
 def test_input_decorator() -> None:
+    """
+    Tests the input_data decorator, both good adn bad.
+    """
     with console.capture() as capture:
         get_data()
         with pytest.raises(FileNotFoundError):
@@ -89,6 +136,9 @@ def test_input_decorator() -> None:
 
 
 def test_task_decorator() -> None:
+    """
+    Tests the task decorator.
+    """
     with console.capture() as capture:
         a_sum, a_product = transform_data(2, 3)
         b_sum, b_product = transform_data(4, 5, task_description='something_else')
@@ -104,6 +154,9 @@ def test_task_decorator() -> None:
 
 
 def test_output_decorator() -> None:
+    """
+    Tests the output decorator both good and bad.
+    """
     context.set_data_reference('finalized_fixture', 'here is the final output')
     with console.capture() as capture:
         dump_data()
@@ -119,6 +172,9 @@ def test_output_decorator() -> None:
 
 
 def test_flow_decorator():
+    """
+    Tests the flow decorator.
+    """
     with console.capture() as capture:
         run_flow()
     log_output = capture.get()
@@ -135,6 +191,9 @@ def test_flow_decorator():
 
 
 def teardown_function():
+    """
+    Removes any leftover output files.
+    """
     for item in (f'{settings.data_dir}/finalized_fixture.csv', f'{settings.data_dir}/finalized_fixture.sql'):
         if os.path.isfile(item):
             os.remove(item)
