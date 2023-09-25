@@ -53,4 +53,4 @@ def output_data() -> dict:
 
 
 ## Logger
-The logger is a simple module that provides wraps some rich console commands for consistency purposes.
+The logger is a simple module that wraps some [rich library](https://github.com/Textualize/rich) console commands for consistency purposes.
