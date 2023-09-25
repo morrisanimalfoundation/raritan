@@ -1,4 +1,5 @@
 import importlib
+import re
 import types
 
 """
@@ -85,7 +86,7 @@ class Context(object):
         """
         self.data_references[name] = data_source
 
-    def get_data_reference(self, name: str):
+    def get_data_reference(self, name):
         """
         Gets a datasource reference or throws if one is not found.
 
@@ -94,9 +95,27 @@ class Context(object):
         name: str
             The name by which to access the data reference.
         """
-        if name not in self.data_references.keys():
-            raise RuntimeError(f'Requested unloaded datasource, {name}. Was it included in @import_data?')
-        return self.data_references[name]
+        if type(name) is str:
+            if name in self.data_references.keys():
+                return self.data_references[name]
+            pattern = re.compile(name)
+            matches = []
+            for dataset_name, dataset in self.data_references.items():
+                if pattern.match(dataset_name):
+                    matches.append(dataset)
+            message = f'No data sources were named or matched, {name}. Was it included in @import_data?'
+            assert len(matches) > 0, message
+            return matches
+        if type(name) is list:
+            matches = []
+            for dataset_name in name:
+                if dataset_name not in self.data_references.keys():
+                    message = f'Requested unloaded data source, {dataset_name}. Was it included in @import_data?'
+                    raise RuntimeError(message)
+                matches.append(self.data_references[dataset_name])
+            return matches
+        bad_type = type(name)
+        raise RuntimeError(f'Data references may only be gotten by string or list, {bad_type} provided.')
 
     def set_settings_module(self, module_name: str) -> None:
         """
