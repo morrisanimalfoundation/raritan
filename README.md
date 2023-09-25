@@ -53,5 +53,4 @@ def output_data() -> dict:
 
 
 ## Logger
-The logger object is singleton that is preconfigured to leverage the [rich library](https://github.com/Textualize/rich) and includes a custom "success" level.
-
+The logger is a simple module that provides wraps some rich console commands for consistency purposes.
