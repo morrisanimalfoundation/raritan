@@ -95,26 +95,32 @@ class Context(object):
         name: str | list
             A name or list of names (or regexes) of data references to get.
         """
+        # In the simplest case, get and return a direct string match.
         if type(name) is str:
             if name in self.data_references.keys():
                 return self.data_references[name]
+            # If we don't find a direct match, see if it's a regex.
             pattern = re.compile(name)
             matches = {}
             for dataset_name, dataset in self.data_references.items():
                 if pattern.match(dataset_name):
                     matches[dataset_name] = dataset
+            # If we still find no matches, throw.
             message = f'No data sources were named or matched, {name}. Was it included in @import_data?'
-            assert len(matches) > 0, message
+            assert len(matches.keys()) > 0, message
             return matches
         if type(name) is list:
+            # If we were provided a list, loop over each item and call this method on it.
             matches = {}
             for dataset_name in name:
                 data = self.get_data_reference(dataset_name)
+                # Respond differently to each return type.
                 if type(data) is dict:
                     matches = {** matches, ** data}
                 else:
                     matches[dataset_name] = data
             return matches
+        # If neither of the above types are found, we don't know how to proceed.
         bad_type = type(name)
         raise RuntimeError(f'Data references may only be gotten by string or list, {bad_type} provided.')
 
