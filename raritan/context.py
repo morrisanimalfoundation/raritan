@@ -86,14 +86,14 @@ class Context(object):
         """
         self.data_references[name] = data_source
 
-    def get_data_reference(self, name):
+    def get_data_reference(self, name: str | list):
         """
         Gets a datasource reference or throws if one is not found.
 
         Parameters
         ----------
-        name: str
-            The name by which to access the data reference.
+        name: str | list
+            A name or list of names (or regexes) of data references to get.
         """
         if type(name) is str:
             if name in self.data_references.keys():

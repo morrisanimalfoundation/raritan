@@ -30,7 +30,7 @@ def input_handler(file: str, extension: str) -> str:
         return file.read()
 
 
-def output_handler(file: str, extension: str, data, **kwargs) -> None:
+def output_handler(file: str, extension: str, data: str | dict, **kwargs) -> None:
     """
     An output handler for our testing purposes
 
@@ -62,12 +62,21 @@ def output_handler(file: str, extension: str, data, **kwargs) -> None:
         raise RuntimeError(f'Data must be string or dict, received {data_type}')
 
 
-def _write_file(name, data) -> None:
+def _write_file(name: str, data: str) -> None:
+    """
+    Writes a file with the open context.
+    Parameters
+    ----------
+    name: str
+      The filename.
+    data: str
+      The data.
+    """
     with open(f'{name}', 'w') as file:
         file.write(data)
 
 
-def analyze_asset_handler(file, extension, data, duration, operation):
+def analyze_asset_handler(file: str, extension: str, data: str | dict, duration: str, operation: str) -> str:
     """
     An analysis handler for our testing purposes.
 
@@ -77,9 +86,9 @@ def analyze_asset_handler(file, extension, data, duration, operation):
       The full path to the resource.
     extension: str
       The extension for pivoting handling.
-    data: string
+    data: str
       The data to handle, a string in this case.
-    duration: string
+    duration: str
       The duration the job ran.
     operation
 
