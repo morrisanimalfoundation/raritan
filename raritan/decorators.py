@@ -149,7 +149,10 @@ def input_data(*args, **kwargs):
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
             settings = context.get_settings()
+            # Get the dictionary describing our input data.
             sources = original_function(*args, **kwargs)
+            # Assets are listed in two tiers.
+            # We currently expect these to be files.
             for path, assets in sources.items():
                 for name, file_name in assets.items():
                     full_path = f'{path}/{file_name}'
@@ -160,8 +163,10 @@ def input_data(*args, **kwargs):
                     extension = path_bits[1] if path_bits[1] else ''
                     extension = extension.replace('.', '')
                     logger.info(f'Handling asset: {full_path}')
+                    # Pass them on to the input handler.
                     duration, data = _time_function(settings.input_handler, *[full_path, extension])
                     context.set_data_reference(name, data)
+                    # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
                     if analyze and hasattr(settings, 'analyze_asset_handler'):
                         message = settings.analyze_asset_handler(full_path, extension, data, duration, 'input')
                         logger.success(message)
@@ -193,15 +198,21 @@ def output_data(*args, **kwargs):
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
             settings = context.get_settings()
+            # Get the dict, describing the assets to output.
             output_map = original_function(*args, **kwargs)
+            # They should be grouped by two tiers.
+            # We are file-centric, but this could work for databases and tables as well.
             for path, assets in output_map.items():
                 for file_name, asset in assets.items():
-                    data = context.get_data_reference(asset['data'] if 'data' in asset.keys() else file_name)
+                    reference_name = asset['data'] if 'data' in asset.keys() else file_name
+                    data = context.get_data_reference(reference_name)
+                    # Iterate over the extensions and allow each one to be processed by the output handler.
                     for extension in asset['formats']:
                         full_path = f'{path}/{file_name}.{extension}'
-                        logger.info(f'Beginning output: {full_path}')
+                        logger.info(f'Beginning output: {file_name} in format {extension}')
                         duration, output = _time_function(settings.output_handler, *[full_path, extension, data],
                                                           **asset['output_kwargs'])
+                        # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
                             message = settings.analyze_asset_handler(full_path, extension, data, duration, 'output')
                             logger.success(message)

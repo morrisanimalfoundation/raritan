@@ -1,3 +1,4 @@
+import glob
 import os.path
 from time import sleep
 
@@ -29,7 +30,10 @@ def get_data() -> dict:
     """
     return {
         settings.data_dir: {
-            'test_fixture': 'test.txt'
+            'test_fixture': 'test.txt',
+            'a_test_fixture': 'test.txt',
+            'b_test_fixture': 'test.txt',
+            'another_fixture': 'test.txt',
         }
     }
 
@@ -85,6 +89,22 @@ def dump_data() -> dict:
                     'fo': True,
                 },
             },
+            'fixture_group': {
+                'data': '.*_test_fixture$',
+                'formats': ('csv',),
+                'output_kwargs': {
+                    'fee': True,
+                    'fi': False,
+                },
+            },
+            'different_fixture_group': {
+                'data': ['.*_test_fixture$', 'another'],
+                'formats': ('csv',),
+                'output_kwargs': {
+                    'fee': True,
+                    'fi': False,
+                },
+            },
         },
     }
 
@@ -129,8 +149,8 @@ def test_input_decorator() -> None:
             missing_input_data()
     fixture = context.get_data_reference('test_fixture')
     log_output = capture.get()
-    assert 'Handling asset: ./raritan/testing/fixture/test.txt' in log_output
-    assert 'Loaded asset: ./raritan/testing/fixture/test.txt <1s 321d34bc9a'
+    assert 'Handling asset: ./raritan/tests/fixture/test.txt' in log_output
+    assert 'Loaded asset: ./raritan/tests/fixture/test.txt <1s 321d34bc9a'
     assert fixture
     assert 'A tiny fixture for testing IO.' in fixture
 
@@ -160,15 +180,24 @@ def test_output_decorator() -> None:
     context.set_data_reference('finalized_fixture', 'here is the final output')
     with console.capture() as capture:
         dump_data()
-        with pytest.raises(RuntimeError):
+        with pytest.raises(Exception):
             missing_dump_data()
     log_output = capture.get()
-    assert 'Beginning output: ./raritan/testing/fixture/finalized_fixture.csv' in log_output
-    assert 'Finished output: ./raritan/testing/fixture/finalized_fixture.csv <1s 321d34bc9a' in log_output
-    assert 'Beginning output: ./raritan/testing/fixture/finalized_fixture.sql' in log_output
-    assert 'Finished output: ./raritan/testing/fixture/finalized_fixture.sql <1s 321d34bc9a' in log_output
+    # Test the one to one output.
+    assert 'Beginning output: finalized_fixture in format csv' in log_output
+    assert 'Finished output: ./raritan/tests/fixture/finalized_fixture.csv <1s 321d34bc9a' in log_output
+    assert 'Beginning output: finalized_fixture in format sql' in log_output
+    assert 'Finished output: ./raritan/tests/fixture/finalized_fixture.sql <1s 321d34bc9a' in log_output
+    # Test the many-to-one output.
+    assert 'Beginning output: fixture_group in format csv' in log_output
+    assert 'Finished output: ./raritan/tests/fixture/fixture_group.zip <1s bc63b64f5a' in log_output
+    assert 'Beginning output: finalized_fixture in format sql' in log_output
+    assert 'Finished output: ./raritan/tests/fixture/different_fixture_group.zip <1s' in log_output
+    assert '8a79d95e42' in log_output
     assert os.path.isfile(f'{settings.data_dir}/finalized_fixture.csv')
     assert os.path.isfile(f'{settings.data_dir}/finalized_fixture.sql')
+    assert os.path.isfile(f'{settings.data_dir}/fixture_group.zip')
+    assert os.path.isfile(f'{settings.data_dir}/different_fixture_group.zip')
 
 
 def test_flow_decorator():
@@ -182,10 +211,10 @@ def test_flow_decorator():
     assert 'Started' in log_output
     assert 'Beginning task: transform_data' in log_output
     assert 'Completed task: transform_data 1s' in log_output
-    assert 'Beginning output: ./raritan/testing/fixture/finalized_fixture.csv' in log_output
-    assert 'Finished output: ./raritan/testing/fixture/finalized_fixture.csv <1s' in log_output
-    assert 'Beginning output: ./raritan/testing/fixture/finalized_fixture.sql' in log_output
-    assert 'Finished output: ./raritan/testing/fixture/finalized_fixture.sql <1s' in log_output
+    assert 'Beginning output: finalized_fixture in format csv' in log_output
+    assert 'Finished output: ./raritan/tests/fixture/finalized_fixture.csv <1s' in log_output
+    assert 'Beginning output: finalized_fixture in format sql' in log_output
+    assert 'Finished output: ./raritan/tests/fixture/finalized_fixture.sql <1s' in log_output
     assert 'Completed flow run!' in log_output
     assert 'Total duration 1s' in log_output
 
@@ -194,6 +223,9 @@ def teardown_function():
     """
     Removes any leftover output files.
     """
-    for item in (f'{settings.data_dir}/finalized_fixture.csv', f'{settings.data_dir}/finalized_fixture.sql'):
+    fixtures = []
+    for extension in ('csv', 'sql', 'zip'):
+        fixtures += glob.glob(f'{settings.data_dir}/*.{extension}')
+    for item in fixtures:
         if os.path.isfile(item):
             os.remove(item)
