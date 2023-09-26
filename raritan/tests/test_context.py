@@ -22,11 +22,11 @@ def test_context() -> None:
     data = context.get_data_reference('data_source_a')
     assert data == 'Here is data for letter, a'
     data = context.get_data_reference('^data_source_*')
-    assert type(data) == list
-    assert len(data) == 4
+    assert type(data) == dict
+    assert len(data.keys()) == 4
     data = context.get_data_reference(['a_random_one', 'data_source_c'])
-    assert type(data) == list
-    assert len(data) == 2
+    assert type(data) == dict
+    assert len(data.keys()) == 2
     bad_requests = ('Noids', 7, ['Still', 'Nope'])
     for bad_request in bad_requests:
         with pytest.raises(Exception):
