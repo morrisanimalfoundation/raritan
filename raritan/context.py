@@ -99,20 +99,21 @@ class Context(object):
             if name in self.data_references.keys():
                 return self.data_references[name]
             pattern = re.compile(name)
-            matches = []
+            matches = {}
             for dataset_name, dataset in self.data_references.items():
                 if pattern.match(dataset_name):
-                    matches.append(dataset)
+                    matches[dataset_name] = dataset
             message = f'No data sources were named or matched, {name}. Was it included in @import_data?'
             assert len(matches) > 0, message
             return matches
         if type(name) is list:
-            matches = []
+            matches = {}
             for dataset_name in name:
-                if dataset_name not in self.data_references.keys():
-                    message = f'Requested unloaded data source, {dataset_name}. Was it included in @import_data?'
-                    raise RuntimeError(message)
-                matches.append(self.data_references[dataset_name])
+                data = self.get_data_reference(dataset_name)
+                if type(data) is dict:
+                    matches = {** matches, ** data}
+                else:
+                    matches[dataset_name] = data
             return matches
         bad_type = type(name)
         raise RuntimeError(f'Data references may only be gotten by string or list, {bad_type} provided.')
