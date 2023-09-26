@@ -196,10 +196,11 @@ def output_data(*args, **kwargs):
             output_map = original_function(*args, **kwargs)
             for path, assets in output_map.items():
                 for file_name, asset in assets.items():
-                    data = context.get_data_reference(asset['data'] if 'data' in asset.keys() else file_name)
+                    reference_name = asset['data'] if 'data' in asset.keys() else file_name
+                    data = context.get_data_reference(reference_name)
                     for extension in asset['formats']:
                         full_path = f'{path}/{file_name}.{extension}'
-                        logger.info(f'Beginning output: {full_path}')
+                        logger.info(f'Beginning output: {file_name} in format {extension}')
                         duration, output = _time_function(settings.output_handler, *[full_path, extension, data],
                                                           **asset['output_kwargs'])
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
