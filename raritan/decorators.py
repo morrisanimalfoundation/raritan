@@ -64,7 +64,7 @@ def flow(*args, **kwargs):
             start_string = start.strftime('%Y-%m-%d %H:%m:%S')
             logger.info(f'Started: {start_string}')
             try:
-                duration = _time_function(original_function, *args, **kwargs)
+                duration = _time_function(original_function, *args, **kwargs)[0]
                 emoji = random.choice(('cat', 'dog', 'horse', 'gorilla'))
                 logger.success(f'Completed flow run! :{emoji}:')
                 logger.info(f'Total duration {duration}')
@@ -202,7 +202,7 @@ def output_data(*args, **kwargs):
                     for asset_format in asset['formats']:
                         logger.info(f'Beginning output: {key} in format {asset_format}')
                         duration = _time_function(settings.output_handler, *[group, key, asset_format, data],
-                                                  **asset['output_kwargs'])
+                                                  **asset['output_kwargs'])[0]
                         # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
                         message = ''
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
@@ -236,7 +236,7 @@ def _get_file_name_from_function(function: callable) -> str:
     return flow_file[0]
 
 
-def _time_function(func: callable, *args, **kwargs) -> tuple | str:
+def _time_function(func: callable, *args, **kwargs) -> tuple:
     """
     Times the execution of a function.
 
@@ -258,10 +258,7 @@ def _time_function(func: callable, *args, **kwargs) -> tuple | str:
     start = datetime.now()
     output = func(*args, **kwargs)
     end = datetime.now()
-    if output is None:
-        return _get_formatted_duration(start, end)
-    else:
-        return _get_formatted_duration(start, end), output
+    return _get_formatted_duration(start, end), output
 
 
 def _get_formatted_duration(start: datetime, end: datetime) -> str:
