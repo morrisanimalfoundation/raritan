@@ -64,13 +64,12 @@ def flow(*args, **kwargs):
             start_string = start.strftime('%Y-%m-%d %H:%m:%S')
             logger.info(f'Started: {start_string}')
             try:
-                duration, output = _time_function(original_function, *args, **kwargs)
+                duration = _time_function(original_function, *args, **kwargs)
                 emoji = random.choice(('cat', 'dog', 'horse', 'gorilla'))
                 logger.success(f'Completed flow run! :{emoji}:')
                 logger.info(f'Total duration {duration}')
-                return output
             except Exception:
-                logger.console.print_exception(show_locals=True)
+                logger.console.print_exception(show_locals=True, max_frames=1)
                 # We want all the flows to run even if one fails.
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
@@ -201,8 +200,8 @@ def output_data(*args, **kwargs):
                     # Iterate over the extensions and allow each one to be processed by the output handler.
                     for asset_format in asset['formats']:
                         logger.info(f'Beginning output: {key} in format {asset_format}')
-                        duration, output = _time_function(settings.output_handler, *[group, key, asset_format, data],
-                                                          **asset['output_kwargs'])
+                        duration = _time_function(settings.output_handler, *[group, key, asset_format, data],
+                                                  **asset['output_kwargs'])
                         # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
                         message = ''
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
@@ -236,7 +235,7 @@ def _get_file_name_from_function(function: callable) -> str:
     return flow_file[0]
 
 
-def _time_function(func: callable, *args, **kwargs) -> tuple:
+def _time_function(func: callable, *args, **kwargs) -> tuple | str:
     """
     Times the execution of a function.
 
@@ -258,7 +257,10 @@ def _time_function(func: callable, *args, **kwargs) -> tuple:
     start = datetime.now()
     output = func(*args, **kwargs)
     end = datetime.now()
-    return _get_formatted_duration(start, end), output
+    if output is None:
+        return _get_formatted_duration(start, end)
+    else:
+        return _get_formatted_duration(start, end), output
 
 
 def _get_formatted_duration(start: datetime, end: datetime) -> str:
