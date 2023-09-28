@@ -152,26 +152,18 @@ def input_data(*args, **kwargs):
             # Get the dictionary describing our input data.
             sources = original_function(*args, **kwargs)
             # Assets are listed in two tiers.
-            # We currently expect these to be files.
-            for path, assets in sources.items():
-                for name, file_name in assets.items():
-                    full_path = f'{path}/{file_name}'
-                    if not os.path.isfile(full_path):
-                        message = f'Missing expected input file: {full_path}'
-                        raise FileNotFoundError(message)
-                    path_bits = os.path.splitext(full_path)
-                    extension = path_bits[1] if path_bits[1] else ''
-                    extension = extension.replace('.', '')
-                    logger.info(f'Handling asset: {full_path}')
+            for group, assets in sources.items():
+                for key, name in assets.items():
+                    logger.info(f'Handling asset: {name}')
                     # Pass them on to the input handler.
-                    duration, data = _time_function(settings.input_handler, *[full_path, extension])
-                    context.set_data_reference(name, data)
+                    duration, data = _time_function(settings.input_handler, *[group, name])
+                    context.set_data_reference(key, data)
                     # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
                     if analyze and hasattr(settings, 'analyze_asset_handler'):
-                        message = settings.analyze_asset_handler(full_path, extension, data, duration, 'input')
+                        message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
                         logger.success(message)
                     else:
-                        logger.success(f'Loaded asset: {full_path} {duration}')
+                        logger.success(f'Loaded asset: {name} {duration}')
         return wrapper_function
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
@@ -202,22 +194,23 @@ def output_data(*args, **kwargs):
             output_map = original_function(*args, **kwargs)
             # They should be grouped by two tiers.
             # We are file-centric, but this could work for databases and tables as well.
-            for path, assets in output_map.items():
-                for file_name, asset in assets.items():
-                    reference_name = asset['data'] if 'data' in asset.keys() else file_name
+            for group, assets in output_map.items():
+                for key, asset in assets.items():
+                    reference_name = asset['data'] if 'data' in asset.keys() else key
                     data = context.get_data_reference(reference_name)
                     # Iterate over the extensions and allow each one to be processed by the output handler.
-                    for extension in asset['formats']:
-                        full_path = f'{path}/{file_name}.{extension}'
-                        logger.info(f'Beginning output: {file_name} in format {extension}')
-                        duration, output = _time_function(settings.output_handler, *[full_path, extension, data],
+                    for asset_format in asset['formats']:
+                        logger.info(f'Beginning output: {key} in format {asset_format}')
+                        duration, output = _time_function(settings.output_handler, *[group, key, asset_format, data],
                                                           **asset['output_kwargs'])
                         # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
+                        message = ''
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
-                            message = settings.analyze_asset_handler(full_path, extension, data, duration, 'output')
+                            message = settings.analyze_asset_handler(group, key, asset_format, data, duration, 'output')
                             logger.success(message)
-                        else:
-                            logger.success(f'Finished output: {full_path} {duration}')
+                        if len(message) == 0:
+                            message = f'Finished output: {key} in format {asset_format} {duration}'
+                        logger.success(message)
         return wrapper_function
     if len(args) > 0 and callable(args[0]):
         return _output(args[0])
@@ -286,9 +279,9 @@ def _get_formatted_duration(start: datetime, end: datetime) -> str:
     """
     output = ''
     seconds = (end - start).total_seconds()
-    hours = seconds // 3600
-    minutes = (seconds - (hours * 3600)) // 60
-    seconds = round(seconds - ((hours * 3600) + (minutes * 60)))
+    hours = int(seconds // 3600)
+    minutes = int((seconds - (hours * 3600)) // 60)
+    seconds = int(round(seconds - ((hours * 3600) + (minutes * 60))))
     if hours > 0:
         output += f'{hours}h'
     if minutes > 0:
