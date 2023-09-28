@@ -157,12 +157,13 @@ def input_data(*args, **kwargs):
                     # Pass them on to the input handler.
                     duration, data = _time_function(settings.input_handler, *[group, name])
                     context.set_data_reference(key, data)
+                    message = ''
                     # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
                     if analyze and hasattr(settings, 'analyze_asset_handler'):
                         message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
-                        logger.success(message)
-                    else:
-                        logger.success(f'Loaded asset: {name} {duration}')
+                    if message is None or len(message) == 0:
+                        message = f'Loaded asset: {name} {duration}'
+                    logger.success(message)
         return wrapper_function
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
@@ -207,7 +208,7 @@ def output_data(*args, **kwargs):
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
                             message = settings.analyze_asset_handler(group, key, asset_format, data, duration, 'output')
                             logger.success(message)
-                        if len(message) == 0:
+                        if message is None or len(message) == 0:
                             message = f'Finished output: {key} in format {asset_format} {duration}'
                         logger.success(message)
         return wrapper_function

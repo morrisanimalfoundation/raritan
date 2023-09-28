@@ -209,6 +209,7 @@ def test_flow_decorator() -> None:
     log_output = capture.get()
     assert 'Beginning flow: test_decorators' in log_output
     assert 'Started' in log_output
+    assert 'Loaded asset' in log_output
     assert 'Beginning task: transform_data' in log_output
     assert 'Completed task: transform_data 1s' in log_output
     assert 'Beginning output: another_fixture in format csv' in log_output
