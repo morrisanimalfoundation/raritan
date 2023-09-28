@@ -81,7 +81,7 @@ def dump_data() -> dict:
     """
     return {
         settings.data_dir: {
-            'finalized_fixture': {
+            'another_fixture': {
                 'formats': ('csv', 'sql'),
                 'output_kwargs': {
                     'fee': True,
@@ -177,30 +177,30 @@ def test_output_decorator() -> None:
     """
     Tests the output decorator both good and bad.
     """
-    context.set_data_reference('finalized_fixture', 'here is the final output')
     with console.capture() as capture:
+        get_data()
         dump_data()
         with pytest.raises(Exception):
             missing_dump_data()
     log_output = capture.get()
     # Test the one to one output.
-    assert 'Beginning output: finalized_fixture in format csv' in log_output
-    assert 'Finished output: ./raritan/tests/fixture/finalized_fixture.csv <1s 321d34bc9a' in log_output
-    assert 'Beginning output: finalized_fixture in format sql' in log_output
-    assert 'Finished output: ./raritan/tests/fixture/finalized_fixture.sql <1s 321d34bc9a' in log_output
+    assert 'Beginning output: another_fixture in format csv' in log_output
+    assert 'Finished output: ./raritan/tests/fixture/another_fixture.csv <1s 9bbb4fc759' in log_output
+    assert 'Beginning output: another_fixture in format sql' in log_output
+    assert 'Finished output: ./raritan/tests/fixture/another_fixture.sql <1s 9bbb4fc759' in log_output
     # Test the many-to-one output.
     assert 'Beginning output: fixture_group in format csv' in log_output
     assert 'Finished output: ./raritan/tests/fixture/fixture_group.zip <1s bc63b64f5a' in log_output
-    assert 'Beginning output: finalized_fixture in format sql' in log_output
+    assert 'Beginning output: different_fixture_group in format csv' in log_output
     assert 'Finished output: ./raritan/tests/fixture/different_fixture_group.zip <1s' in log_output
     assert '8a79d95e42' in log_output
-    assert os.path.isfile(f'{settings.data_dir}/finalized_fixture.csv')
-    assert os.path.isfile(f'{settings.data_dir}/finalized_fixture.sql')
+    assert os.path.isfile(f'{settings.data_dir}/another_fixture.csv')
+    assert os.path.isfile(f'{settings.data_dir}/another_fixture.sql')
     assert os.path.isfile(f'{settings.data_dir}/fixture_group.zip')
     assert os.path.isfile(f'{settings.data_dir}/different_fixture_group.zip')
 
 
-def test_flow_decorator():
+def test_flow_decorator() -> None:
     """
     Tests the flow decorator.
     """
@@ -211,15 +211,22 @@ def test_flow_decorator():
     assert 'Started' in log_output
     assert 'Beginning task: transform_data' in log_output
     assert 'Completed task: transform_data 1s' in log_output
-    assert 'Beginning output: finalized_fixture in format csv' in log_output
-    assert 'Finished output: ./raritan/tests/fixture/finalized_fixture.csv <1s' in log_output
-    assert 'Beginning output: finalized_fixture in format sql' in log_output
-    assert 'Finished output: ./raritan/tests/fixture/finalized_fixture.sql <1s' in log_output
+    assert 'Beginning output: another_fixture in format csv' in log_output
+    assert 'Finished output: ./raritan/tests/fixture/another_fixture.csv <1s' in log_output
+    assert 'Beginning output: another_fixture in format sql' in log_output
+    assert 'Finished output: ./raritan/tests/fixture/another_fixture.sql <1s' in log_output
     assert 'Completed flow run!' in log_output
     assert 'Total duration 1s' in log_output
 
 
-def teardown_function():
+def setup_function() -> None:
+    """
+     Performs setup steps.
+    """
+    context.clear_data_references()
+
+
+def teardown_function() -> None:
     """
     Removes any leftover output files.
     """
