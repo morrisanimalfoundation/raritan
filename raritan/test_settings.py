@@ -10,34 +10,38 @@ A settings file for running the test suite.
 data_dir = './raritan/tests/fixture'
 
 
-def input_handler(file: str, extension: str) -> str:
+def input_handler(path: str, file: str) -> str:
     """
     An input handler for our testing purposes.
 
     Parameters
     ----------
+    path: str
+      The path to the file.
     file: str
       The full path to the resource.
-    extension: str
-      The extension for pivoting handling.
 
     Returns
     -------
     A string in this case, though it could be anything.
     """
-    assert extension == 'txt'
-    with open(f'{file}', 'r') as file:
+    assert '.txt' in file
+    full_path = f'{path}/{file}'
+    assert os.path.isfile(full_path)
+    with open(full_path, 'r') as file:
         return file.read()
 
 
-def output_handler(file: str, extension: str, data: str | dict, **kwargs) -> None:
+def output_handler(path: str, file: str, extension: str, data: str | dict, **kwargs) -> None:
     """
-    An output handler for our testing purposes
+    An output handler for our testing purposes.
 
     Parameters
     ----------
+    path: str
+      The path to the resource.
     file: str
-      The full path to the resource.
+      The name of the item.
     extension: str
       The extension for pivoting handling.
     data: string|dict
@@ -49,9 +53,11 @@ def output_handler(file: str, extension: str, data: str | dict, **kwargs) -> Non
     assert not kwargs.get('fi')
     data_type = type(data)
     if data_type is not dict:
-        _write_file(file, data)
+        if extension not in file:
+            file = f'{file}.{extension}'
+        _write_file(f'{path}/{file}', data)
     elif data_type is dict:
-        directory = os.path.splitext(file)[0]
+        directory = f'{path}/{file}'
         if not os.path.isdir(directory):
             os.mkdir(directory)
         for name, item in data.items():
@@ -76,14 +82,16 @@ def _write_file(name: str, data: str) -> None:
         file.write(data)
 
 
-def analyze_asset_handler(file: str, extension: str, data: str | dict, duration: str, operation: str) -> str:
+def analyze_asset_handler(path: str, file: str, extension: str, data: str | dict, duration: str, operation: str) -> str:
     """
     An analysis handler for our testing purposes.
 
     Parameters
     ----------
+    path: str
+      The path to the resource.
     file: str
-      The full path to the resource.
+      The name of the item.
     extension: str
       The extension for pivoting handling.
     data: str
@@ -99,10 +107,10 @@ def analyze_asset_handler(file: str, extension: str, data: str | dict, duration:
     """
     if type(data) is dict:
         data = json.dumps(data)
-        file = file.replace(extension, 'zip')
+        extension = 'zip'
     checksum = hashlib.sha1(data.encode('utf-8')).hexdigest()
     checksum = checksum[0:10]
     if operation == 'input':
-        return f'Loaded asset {file} {duration} {checksum}'
+        return f'Loaded asset {path}/{file} {duration} {checksum}'
     if operation == 'output':
-        return f'Finished output: {file} {duration} {checksum}'
+        return f'Finished output: {path}/{file}.{extension} {duration} {checksum}'
