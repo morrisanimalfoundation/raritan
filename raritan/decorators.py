@@ -207,7 +207,6 @@ def output_data(*args, **kwargs):
                         message = ''
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
                             message = settings.analyze_asset_handler(group, key, asset_format, data, duration, 'output')
-                            logger.success(message)
                         if message is None or len(message) == 0:
                             message = f'Finished output: {key} in format {asset_format} {duration}'
                         logger.success(message)
