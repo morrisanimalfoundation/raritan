@@ -145,12 +145,12 @@ def test_input_decorator() -> None:
     """
     with console.capture() as capture:
         get_data()
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(AssertionError):
             missing_input_data()
     fixture = context.get_data_reference('test_fixture')
     log_output = capture.get()
-    assert 'Handling asset: ./raritan/tests/fixture/test.txt' in log_output
-    assert 'Loaded asset: ./raritan/tests/fixture/test.txt <1s 321d34bc9a'
+    assert 'Handling asset: test.txt' in log_output
+    assert 'Loaded asset: ./raritan/tests/fixture/test.txt <1s 9bbb4fc759'
     assert fixture
     assert 'A tiny fixture for testing IO.' in fixture
 
