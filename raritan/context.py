@@ -124,6 +124,11 @@ class Context(object):
         bad_type = type(name)
         raise RuntimeError(f'Data references may only be gotten by string or list, {bad_type} provided.')
 
+    def print_all_data_references(context):
+        for key, value in context.data_references.items():
+            if value is not None:
+                print(f"{key}: {value}")
+
     def clear_data_references(self) -> None:
         """
         Empties the data_references storage.
