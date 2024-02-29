@@ -3,10 +3,10 @@ import random
 import sys
 from datetime import datetime
 from functools import wraps
+
 from raritan import logger
 from raritan.context import context
 from raritan.logger import error
-
 
 """
 Provides decorators for our ETL processes.
@@ -207,8 +207,7 @@ def output_data(*args, **kwargs):
                         # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
                         message = ''
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
-                            logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
-                            #message = settings.analyze_asset_handler(group, key, asset_format, data, duration, 'output')
+                            message = settings.analyze_asset_handler(group, key, asset_format, data, duration, 'output')
                         if message is None or len(message) == 0:
                             message = f'Finished output: {key} in format {asset_format} {duration}'
                         logger.success(message)
@@ -259,7 +258,6 @@ def _time_function(func: callable, *args, **kwargs) -> tuple:
     output = func(*args, **kwargs)
     end = datetime.now()
     return _get_formatted_duration(start, end), output
-
 
 
 def _get_formatted_duration(start: datetime, end: datetime) -> str:

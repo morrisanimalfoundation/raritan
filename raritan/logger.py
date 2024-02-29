@@ -1,9 +1,9 @@
+import re
+import traceback
 
 from rich.console import Console
-import os
+
 from raritan.context import context
-import traceback
-import re
 
 """
 Some very simple rich enabled CLI output helpers.
@@ -84,15 +84,14 @@ def error(message, **kwargs) -> None:
     kwargs: dict
       Any kwargs to pass to the console.
     """
-    print(context.print_all_data_references())
     if not context.no_logging:
         # Extract variables from kwargs
         traceback_part = traceback.format_exc(limit=4)  # Limit specifies how many frames to capture
-
         last_file_line, next_line = get_last_file_and_next_line(traceback_part)
-        print("where is the none coming from")
-        print(f"Error Message: {message}")
-        print(last_file_line)
-        print("Corrupt Code:", next_line)
-
-
+        console.print("------------", style='red')
+        console.print(last_file_line, style='red')
+        console.print(f"{message}", style='red')
+        console.print("Corrupt Code:", next_line, style='red')
+        console.print("Variables")
+        console.print(context.print_all_data_references(), style='red')
+        console.print("------------", style='red')

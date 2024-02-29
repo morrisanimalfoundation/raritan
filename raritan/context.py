@@ -2,6 +2,8 @@ import importlib
 import re
 import types
 
+import pandas as pd
+
 """
 Provides a context pseudo-singleton to store information about our flow run.
 """
@@ -127,6 +129,9 @@ class Context(object):
     def print_all_data_references(context):
         for key, value in context.data_references.items():
             if value is not None:
+                if isinstance(value, pd.DataFrame):
+                    print(f"Shape of {key}: {value.shape}")
+                    print(f"Columns of {key}: {value.columns}")
                 print(f"{key}: {value}")
 
     def clear_data_references(self) -> None:
