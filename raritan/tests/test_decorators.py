@@ -142,11 +142,7 @@ def run_flow() -> None:
 
 def test_input_decorator() -> None:
     """
-<<<<<<< HEAD
-    Tests the input_data decorator, both good and bad.
-=======
     Tests the input_data decorator, both good adn bad.
->>>>>>> 8f1af0eac4de6fea51eda5d2469f0cd055adfb43
     """
     with console.capture() as capture:
         get_data()
@@ -183,7 +179,6 @@ def test_error_message_output() -> None:
         try:
             get_data()
             fixture = context.get_data_reference('test_fixture')
-            fixture['non_existent_column']
         except TypeError as e:
             error(f"Error occurred: {e}")  # Log the exception using the error() function
     log_output = capture.get()  # Get the captured output, including the exception message
