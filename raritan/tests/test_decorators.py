@@ -178,7 +178,6 @@ def test_error_message_output() -> None:
     with console.capture() as capture:  # Place console capture context manager here
         try:
             get_data()
-            fixture = context.get_data_reference('test_fixture')
         except TypeError as e:
             error(f"Error occurred: {e}")  # Log the exception using the error() function
     log_output = capture.get()  # Get the captured output, including the exception message
