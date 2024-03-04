@@ -1,13 +1,25 @@
 import glob
 import os.path
+
+<<<<<<< HEAD
 import re
+
+=======
+>>>>>>> 8f1af0eac4de6fea51eda5d2469f0cd055adfb43
 from time import sleep
 
 import pytest
 
 from raritan.context import context
 from raritan.decorators import flow, input_data, output_data, task
+
+<<<<<<< HEAD
 from raritan.logger import console, error
+
+=======
+from raritan.logger import console
+
+>>>>>>> 8f1af0eac4de6fea51eda5d2469f0cd055adfb43
 
 """
 Tests decorators and other basic functionality.
@@ -142,7 +154,11 @@ def run_flow() -> None:
 
 def test_input_decorator() -> None:
     """
+<<<<<<< HEAD
     Tests the input_data decorator, both good and bad.
+=======
+    Tests the input_data decorator, both good adn bad.
+>>>>>>> 8f1af0eac4de6fea51eda5d2469f0cd055adfb43
     """
     with console.capture() as capture:
         get_data()
@@ -174,6 +190,7 @@ def test_task_decorator() -> None:
     assert b_product == 20
 
 
+<<<<<<< HEAD
 def test_error_message_output() -> None:
     with console.capture() as capture:  # Place console capture context manager here
         try:
@@ -190,6 +207,8 @@ def test_error_message_output() -> None:
     assert "Corrupt Code: fixture['non_existent_column']" in log_output_stripped
 
 
+=======
+>>>>>>> 8f1af0eac4de6fea51eda5d2469f0cd055adfb43
 def test_output_decorator() -> None:
     """
     Tests the output decorator both good and bad.
