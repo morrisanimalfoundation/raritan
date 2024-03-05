@@ -1,12 +1,13 @@
 import glob
 import os.path
+import re
 from time import sleep
 
 import pytest
 
 from raritan.context import context
 from raritan.decorators import flow, input_data, output_data, task
-from raritan.logger import console
+from raritan.logger import console, error
 
 """
 Tests decorators and other basic functionality.
@@ -171,6 +172,20 @@ def test_task_decorator() -> None:
     assert a_product == 6
     assert b_sum == 9
     assert b_product == 20
+
+
+def test_error_message_output() -> None:
+    with console.capture() as capture:  # Place console capture context manager here
+        try:
+            get_data()
+        except TypeError as e:
+            error(f"Error occurred: {e}")  # Log the exception using the error() function
+    log_output = capture.get()  # Get the captured output, including the exception message
+    # The error message has colors, so we need to strip them
+    log_output_stripped = re.sub(r'\x1b\[[0-9;]*[mK]', '', log_output)
+    assert 'File "/workspace/raritan/tests/test_decorators.py", line 180, in test_error_message_output' in log_output_stripped
+    assert "Error occurred: string indices must be integers, not 'str'" in log_output_stripped
+    assert "Corrupt Code: fixture['non_existent_column']" in log_output_stripped
 
 
 def test_output_decorator() -> None:

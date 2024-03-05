@@ -6,6 +6,7 @@ from functools import wraps
 
 from raritan import logger
 from raritan.context import context
+from raritan.logger import error
 
 """
 Provides decorators for our ETL processes.
@@ -68,8 +69,8 @@ def flow(*args, **kwargs):
                 emoji = random.choice(('cat', 'dog', 'horse', 'gorilla'))
                 logger.success(f'Completed flow run! :{emoji}:')
                 logger.info(f'Total duration {duration}')
-            except Exception:
-                logger.console.print_exception(show_locals=True, max_frames=1)
+            except Exception as e:
+                error(f"Error occurred: {e}")  # Log the error message
                 # We want all the flows to run even if one fails.
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
@@ -116,8 +117,8 @@ def task(*args, **kwargs):
                 duration, output = _time_function(original_function, *args, **kwargs)
                 logger.success(f'Completed task: {task_description} {duration}')
                 return output
-            except Exception:
-                logger.console.print_exception(show_locals=True, max_frames=1)
+            except Exception as e:
+                error(f"Error occurred: {e}")  # Log the error message
                 # We want all the flows to run even if one fails.
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
@@ -253,7 +254,6 @@ def _time_function(func: callable, *args, **kwargs) -> tuple:
     A tuple the first element of which is a formatted string of duration.
       The second element is the return value of the provided function.
     """
-
     start = datetime.now()
     output = func(*args, **kwargs)
     end = datetime.now()

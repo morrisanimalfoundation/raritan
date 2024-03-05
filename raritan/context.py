@@ -2,6 +2,8 @@ import importlib
 import re
 import types
 
+import pandas as pd
+
 """
 Provides a context pseudo-singleton to store information about our flow run.
 """
@@ -123,6 +125,22 @@ class Context(object):
         # If neither of the above types are found, we don't know how to proceed.
         bad_type = type(name)
         raise RuntimeError(f'Data references may only be gotten by string or list, {bad_type} provided.')
+
+    def print_all_data_references(self, context):
+        """
+        Prints information about each data reference in the context, including its key,
+        shape (if it's a pandas DataFrame), and its value.
+        Parameters
+        ----------
+        context: dict
+            The context containing data references.
+        """
+        for key, value in context.data_references.items():
+            if value is not None:
+                if isinstance(value, pd.DataFrame):
+                    print(f"Shape of {key}: {value.shape}")
+                    print(f"Columns of {key}: {value.columns}")
+                print(f"{key}: {value}")
 
     def clear_data_references(self) -> None:
         """
