@@ -127,6 +127,14 @@ class Context(object):
         raise RuntimeError(f'Data references may only be gotten by string or list, {bad_type} provided.')
 
     def print_all_data_references(context):
+        """
+        Prints information about each data reference in the context, including its key,
+        shape (if it's a pandas DataFrame), and its value.
+        Parameters
+        ----------
+        context: dict
+            The context containing data references.
+        """
         for key, value in context.data_references.items():
             if value is not None:
                 if isinstance(value, pd.DataFrame):
