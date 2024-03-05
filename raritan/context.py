@@ -126,7 +126,7 @@ class Context(object):
         bad_type = type(name)
         raise RuntimeError(f'Data references may only be gotten by string or list, {bad_type} provided.')
 
-    def print_all_data_references(context):
+    def print_all_data_references(self, context):
         """
         Prints information about each data reference in the context, including its key,
         shape (if it's a pandas DataFrame), and its value.
