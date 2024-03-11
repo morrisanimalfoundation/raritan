@@ -156,7 +156,7 @@ def input_data(*args, **kwargs):
                 for key, name in assets.items():
                     logger.info(f'Handling asset: {name}')
                     # Pass them on to the input handler.
-                    duration, data = _time_function(settings.input_handler, *[group, name])
+                    duration, data = _time_function(settings.input_handler, *[group, name], optional_flag=kwargs.get('optional', False) )
                     context.set_data_reference(key, data)
                     message = ''
                     # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
