@@ -166,8 +166,7 @@ def input_data(*args, **kwargs):
                     if not os.path.exists(group + '/' + name):
                         # It is not optional
                         if not inner_optional_flag:
-                            error(f"Non-Optional file missing: {name}")
-                            continue  # Skip processing if file is not optional
+                            raise FileNotFoundError(f"Non-Optional file missing: {name}")
                         else:
                             logger.info(f"Optional file missing: {name}")
                             continue  # Skip processing if file is optional
