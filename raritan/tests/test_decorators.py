@@ -43,6 +43,14 @@ def get_data() -> dict:
 
 @input_data
 def get_missing_nonoptional_file() -> dict:
+    """
+    A corrupted @input_data implementation for a missing non-optional file.
+
+    Raises
+    ------
+    ErrorMessage
+       'Non-Optional file missing: missing_nonoptional.csv'
+    """
     return {
         settings.data_dir: {
             'missing_nonoptional': {'file': 'missing_nonoptional.csv', 'optional': False}
@@ -173,6 +181,14 @@ def test_task_decorator() -> None:
 
 
 def test_error_message_output() -> None:
+    """
+    Test function to verify error message output when a missing non-optional file is encountered.
+
+    Raises
+    ------
+    AssertionError
+        If the expected error messages are not found in the log output.
+    """
     with console.capture() as capture:  # Place console capture context manager here
         try:
             get_missing_nonoptional_file()
@@ -186,6 +202,19 @@ def test_error_message_output() -> None:
 
 
 def remove_ansi_escape_sequences(text):
+    """
+    Removes ANSI escape sequences (color codes and formatting) from a given text string.
+
+    Parameters
+    ----------
+    text: str
+        The input text containing ANSI escape sequences.
+
+    Returns
+    -------
+    str
+        A new string with ANSI escape sequences removed.
+    """
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     return ansi_escape.sub('', text)
 
