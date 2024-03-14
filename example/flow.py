@@ -20,7 +20,10 @@ def get_data() -> dict:
             'labs_historical': 'labs_historical.csv',
         },
         settings.dictionary_dir: {
-            'labs_dictionary': 'multi_column_dictionary_labs.csv'
+            'labs_dictionary': {
+                'optional': True,
+                'file': 'multi_column_dictionary_labs.csv',
+            }
         }
     }
 

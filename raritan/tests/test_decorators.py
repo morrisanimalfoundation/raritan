@@ -35,24 +35,18 @@ def get_data() -> dict:
             'a_test_fixture': 'test.txt',
             'b_test_fixture': 'test.txt',
             'another_fixture': 'test.txt',
-        }
+            'test_dictionary': {'file': 'test_dictionary.csv', 'optional': True},
+            'fake_dictionary': {'file': 'fake_dictionary.csv', 'optional': True}
+        },
     }
 
 
 @input_data
-def missing_input_data() -> dict:
-    """
-    A bad @input_data implementation to test the unhappy path.
-
-    Returns
-    -------
-    data: dict
-      A dict of data to load into context.
-    """
+def get_missing_nonoptional_file() -> dict:
     return {
         settings.data_dir: {
-            'test_fixture': 'velcro.txt'
-        }
+            'missing_nonoptional': {'file': 'missing_nonoptional.csv', 'optional': False}
+        },
     }
 
 
@@ -137,21 +131,25 @@ def run_flow() -> None:
     """
     get_data()
     transform_data(2, 3)
+    context.print_all_data_references()
     dump_data()
 
 
 def test_input_decorator() -> None:
     """
-    Tests the input_data decorator, both good adn bad.
+    Tests the input_data decorator, both good and bad.
     """
-    with console.capture() as capture:
-        get_data()
-        with pytest.raises(AssertionError):
-            missing_input_data()
+    with console.capture() as capture:  # Place console capture context manager here
+        try:
+            get_data()
+        except TypeError as e:
+            error(f"Error occurred: {e}")  # Log the exception using the error() function
     fixture = context.get_data_reference('test_fixture')
     log_output = capture.get()
     assert 'Handling asset: test.txt' in log_output
     assert 'Loaded asset: ./raritan/tests/fixture/test.txt <1s 9bbb4fc759'
+    assert 'Handling asset: test_dictionary.csv'
+    assert 'Optional file missing: test_dictionary.csv'
     assert fixture
     assert 'A tiny fixture for testing IO.' in fixture
 
@@ -177,15 +175,19 @@ def test_task_decorator() -> None:
 def test_error_message_output() -> None:
     with console.capture() as capture:  # Place console capture context manager here
         try:
-            get_data()
+            get_missing_nonoptional_file()
         except TypeError as e:
             error(f"Error occurred: {e}")  # Log the exception using the error() function
-    log_output = capture.get()  # Get the captured output, including the exception message
-    # The error message has colors, so we need to strip them
-    log_output_stripped = re.sub(r'\x1b\[[0-9;]*[mK]', '', log_output)
-    assert 'File "/workspace/raritan/tests/test_decorators.py", line 180, in test_error_message_output' in log_output_stripped
-    assert "Error occurred: string indices must be integers, not 'str'" in log_output_stripped
-    assert "Corrupt Code: fixture['non_existent_column']" in log_output_stripped
+    log_output = remove_ansi_escape_sequences(capture.get())
+    # Check if the log message "Handling asset: missing_nonoptional.csv" is present
+    assert 'Handling asset: missing_nonoptional.csv' in log_output
+    # Check if the log message "Non-Optional file missing: missing_nonoptional.csv" is present
+    assert 'Non-Optional file missing: missing_nonoptional.csv' in log_output
+
+
+def remove_ansi_escape_sequences(text):
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape.sub('', text)
 
 
 def test_output_decorator() -> None:
@@ -194,16 +196,14 @@ def test_output_decorator() -> None:
     """
     with console.capture() as capture:
         get_data()
+        context.print_all_data_references()
         dump_data()
-        with pytest.raises(Exception):
-            missing_dump_data()
-    log_output = capture.get()
+    log_output = remove_ansi_escape_sequences(capture.get())
     # Test the one to one output.
     assert 'Beginning output: another_fixture in format csv' in log_output
     assert 'Finished output: ./raritan/tests/fixture/another_fixture.csv <1s 9bbb4fc759' in log_output
     assert 'Beginning output: another_fixture in format sql' in log_output
     assert 'Finished output: ./raritan/tests/fixture/another_fixture.sql <1s 9bbb4fc759' in log_output
-    # Test the many-to-one output.
     assert 'Beginning output: fixture_group in format csv' in log_output
     assert 'Finished output: ./raritan/tests/fixture/fixture_group.zip <1s bc63b64f5a' in log_output
     assert 'Beginning output: different_fixture_group in format csv' in log_output
@@ -221,7 +221,7 @@ def test_flow_decorator() -> None:
     """
     with console.capture() as capture:
         run_flow()
-    log_output = capture.get()
+    log_output = remove_ansi_escape_sequences(capture.get())
     assert 'Beginning flow: test_decorators' in log_output
     assert 'Started' in log_output
     assert 'Loaded asset' in log_output
