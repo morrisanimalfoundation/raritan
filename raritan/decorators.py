@@ -144,6 +144,7 @@ def input_data(*args, **kwargs):
     A callable which is the original function with decoration.
     """
     analyze = kwargs.get('analyze', True)
+    optional_flag = kwargs.get('optional', False)
 
     def _input(original_function):
         @wraps(original_function)
@@ -154,7 +155,21 @@ def input_data(*args, **kwargs):
             # Assets are listed in two tiers.
             for group, assets in sources.items():
                 for key, name in assets.items():
+                    if isinstance(name, dict):
+                        # If assets is a dictionary, iterate over its items
+                        inner_optional_flag = name.get('optional', False)
+                        name = name.get('file')
+                    else:
+                        inner_optional_flag = optional_flag  # Use the default optional_flag
                     logger.info(f'Handling asset: {name}')
+                    # Check the optional flag
+                    if not os.path.exists(group + '/' + name):
+                        # It is not optional
+                        if not inner_optional_flag:
+                            raise FileNotFoundError(f"Non-Optional file missing: {name}")
+                        else:
+                            logger.info(f"Optional file missing: {name}")
+                            continue  # Skip processing if file is optional
                     # Pass them on to the input handler.
                     duration, data = _time_function(settings.input_handler, *[group, name])
                     context.set_data_reference(key, data)
