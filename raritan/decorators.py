@@ -130,31 +130,6 @@ def task(*args, **kwargs):
     return _task
 
 
-def filter_input_data(table_name: str, filtering_dictionary: dict):
-    """
-    Filter the data stored in a DataFrame referenced by `table_name` based on the given `filtering_dictionary`.
-
-    Parameters:
-    -----------
-    table_name : str
-        The name of the DataFrame stored in the context that needs to be filtered.
-
-    filtering_dictionary : dict
-        A dictionary containing column names as keys and filtering values as values.
-        Each key-value pair specifies the filtering criterion for the corresponding column.
-        If the value is a list, rows with values in the specified list for the column are retained.
-        If the value is not a list, rows with the specified value for the column are retained.
-
-    """
-    df = context.get_data_reference(table_name)
-    for column_name, values in filtering_dictionary.items():
-        if isinstance(values, list):
-            df = df[df[column_name].isin(values)].reset_index(drop=True)
-        else:
-            df = df[df[column_name] == values]
-    context.set_data_reference(table_name, df)
-
-
 def input_data(*args, **kwargs):
     """
     Loads a dictionary of assets into the context object for the run.
@@ -187,6 +162,7 @@ def input_data(*args, **kwargs):
                     if isinstance(name, dict):
                         # If assets is a dictionary, iterate over its items
                         inner_optional_flag = name.get('optional', False)
+                        # Grab the filters
                         filters = name.get('filters', None)
                         name = name.get('file')
                     else:
@@ -202,6 +178,9 @@ def input_data(*args, **kwargs):
                             continue  # Skip processing if file is optional
                     # Pass them on to the input handler.
                     duration, data = _time_function(settings.input_handler, *[group, name])
+                    if filters is not None:
+                        for key, value in filters.items():
+                            key(data, value)
                     context.set_data_reference(key, data)
                     message = ''
                     # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
@@ -210,9 +189,6 @@ def input_data(*args, **kwargs):
                     if message is None or len(message) == 0:
                         message = f'Loaded asset: {name} {duration}'
                     logger.success(message)
-                    # Handle filtering
-                    if filters is not None:
-                        filter_input_data(key, filters)
         return wrapper_function
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
