@@ -130,7 +130,22 @@ def task(*args, **kwargs):
     return _task
 
 
-def filter_input_data(table_name, filtering_dictionary):
+def filter_input_data(table_name: str, filtering_dictionary: dict):
+    """
+    Filter the data stored in a DataFrame referenced by `table_name` based on the given `filtering_dictionary`.
+
+    Parameters:
+    -----------
+    table_name : str
+        The name of the DataFrame stored in the context that needs to be filtered.
+
+    filtering_dictionary : dict
+        A dictionary containing column names as keys and filtering values as values.
+        Each key-value pair specifies the filtering criterion for the corresponding column.
+        If the value is a list, rows with values in the specified list for the column are retained.
+        If the value is not a list, rows with the specified value for the column are retained.
+
+    """
     df = context.get_data_reference(table_name)
     for column_name, values in filtering_dictionary.items():
         if isinstance(values, list):
