@@ -20,7 +20,8 @@ def get_data() -> dict:
                 'optional': False,
                 'file': 'labs_ongoing.csv',
                 'filters': {
-                    'DOGID': '094-000019'
+                    'dog_id_filter': 'id3',
+                    'webform_id_filter': ('annual_owner', 'annual_veterinarian')
                 }
             },
             'labs_historical': 'labs_historical.csv',
@@ -28,7 +29,7 @@ def get_data() -> dict:
                 'optional': False,
                 'file': 'sample_ops_labs.tsv',
                 'filters': {
-                    'dog_id': ['094-000020', '094-020689', '094-015444']
+                    'dog_id_filter': ('id1', 'id2', 'id3')
                 }
             }
         },
