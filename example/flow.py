@@ -20,7 +20,7 @@ def get_data() -> dict:
                 'optional': False,
                 'file': 'labs_ongoing.csv',
                 'filters': {
-                    'dog_id_filter': 'id3',
+                    'dog_id_filter': ('id3'),
                     'webform_id_filter': ('annual_owner', 'annual_veterinarian')
                 }
             },
