@@ -179,8 +179,15 @@ def input_data(*args, **kwargs):
                     # Pass them on to the input handler.
                     duration, data = _time_function(settings.input_handler, *[group, name])
                     if filters is not None:
-                        for key, value in filters.items():
-                            key(data, value)
+                        try:
+                            for filter_function, value in filters.items():
+                                data = filter_function(data, value)
+                        except Exception as e:
+                            error(f"Error occurred: {e}")  # Log the error message
+                            # We want all the flows to run even if one fails.
+                            # After the build is complete we scan the output for `Traceback` and if the key word is found,
+                            # it will throw a fail on Jenkins.
+                            quit()
                     context.set_data_reference(key, data)
                     message = ''
                     # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
