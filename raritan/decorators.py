@@ -130,6 +130,16 @@ def task(*args, **kwargs):
     return _task
 
 
+def filter_input_data(table_name, filtering_dictionary):
+    df = context.get_data_reference(table_name)
+    for column_name, values in filtering_dictionary.items():
+        if isinstance(values, list):
+            df = df[df[column_name].isin(values)].reset_index(drop=True)
+        else:
+            df = df[df[column_name] == values]
+    context.set_data_reference(table_name, df)
+
+
 def input_data(*args, **kwargs):
     """
     Loads a dictionary of assets into the context object for the run.
@@ -145,10 +155,14 @@ def input_data(*args, **kwargs):
     """
     analyze = kwargs.get('analyze', True)
     optional_flag = kwargs.get('optional', False)
+    filters = kwargs.get('filters', None)
 
     def _input(original_function):
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
+            nonlocal filters  # Declare filters as nonlocal to modify the outer variable
+            nonlocal optional_flag  # Declare optional_flag as nonlocal to modify the outer variable
+            nonlocal analyze  # Declare optional_flag as nonlocal to modify the outer variable
             settings = context.get_settings()
             # Get the dictionary describing our input data.
             sources = original_function(*args, **kwargs)
@@ -158,6 +172,7 @@ def input_data(*args, **kwargs):
                     if isinstance(name, dict):
                         # If assets is a dictionary, iterate over its items
                         inner_optional_flag = name.get('optional', False)
+                        filters = name.get('filters', None)
                         name = name.get('file')
                     else:
                         inner_optional_flag = optional_flag  # Use the default optional_flag
@@ -180,6 +195,9 @@ def input_data(*args, **kwargs):
                     if message is None or len(message) == 0:
                         message = f'Loaded asset: {name} {duration}'
                     logger.success(message)
+                    # Handle filtering
+                    if filters is not None:
+                        filter_input_data(key, filters)
         return wrapper_function
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
