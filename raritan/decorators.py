@@ -183,7 +183,7 @@ def input_data(*args, **kwargs):
                             for filter_function, value in filters.items():
                                 data = filter_function(data, value)
                         except Exception as e:
-                            error(f"Something went wrong with the filter function")  # Log the error message
+                            error(f"Something went wrong with the filter function: {e}")  # Log the error message
                             # We want all the flows to run even if one fails.
                             # After the build is complete we scan the output for `Traceback` and if the key word is found,
                             # it will throw a fail on Jenkins.
