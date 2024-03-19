@@ -16,8 +16,22 @@ def get_data() -> dict:
     """
     return {
         settings.input_dir: {
-            'labs_ongoing': 'labs_ongoing.csv',
+            'labs_ongoing': {
+                'optional': False,
+                'file': 'labs_ongoing.csv',
+                'filters': {
+                    'dog_id_filter': ('id3'),
+                    'webform_id_filter': ('annual_owner', 'annual_veterinarian')
+                }
+            },
             'labs_historical': 'labs_historical.csv',
+            'sample_ops_labs': {
+                'optional': False,
+                'file': 'sample_ops_labs.tsv',
+                'filters': {
+                    'dog_id_filter': ('id1', 'id2', 'id3')
+                }
+            }
         },
         settings.dictionary_dir: {
             'labs_dictionary': {

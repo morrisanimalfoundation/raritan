@@ -145,10 +145,14 @@ def input_data(*args, **kwargs):
     """
     analyze = kwargs.get('analyze', True)
     optional_flag = kwargs.get('optional', False)
+    filters = kwargs.get('filters', None)
 
     def _input(original_function):
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
+            nonlocal filters  # Declare filters as nonlocal to modify the outer variable
+            nonlocal optional_flag  # Declare optional_flag as nonlocal to modify the outer variable
+            nonlocal analyze  # Declare optional_flag as nonlocal to modify the outer variable
             settings = context.get_settings()
             # Get the dictionary describing our input data.
             sources = original_function(*args, **kwargs)
@@ -158,6 +162,8 @@ def input_data(*args, **kwargs):
                     if isinstance(name, dict):
                         # If assets is a dictionary, iterate over its items
                         inner_optional_flag = name.get('optional', False)
+                        # Grab the filters
+                        filters = name.get('filters', None)
                         name = name.get('file')
                     else:
                         inner_optional_flag = optional_flag  # Use the default optional_flag
@@ -172,6 +178,16 @@ def input_data(*args, **kwargs):
                             continue  # Skip processing if file is optional
                     # Pass them on to the input handler.
                     duration, data = _time_function(settings.input_handler, *[group, name])
+                    if filters is not None:
+                        try:
+                            for filter_function, value in filters.items():
+                                data = filter_function(data, value)
+                        except Exception as e:
+                            error(f"Something went wrong with the filter function: {e}")  # Log the error message
+                            # We want all the flows to run even if one fails.
+                            # After the build is complete we scan the output for `Traceback` and if the key word is found,
+                            # it will throw a fail on Jenkins.
+                            quit()
                     context.set_data_reference(key, data)
                     message = ''
                     # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
