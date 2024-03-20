@@ -180,6 +180,7 @@ def input_data(*args, **kwargs):
                         # It is not optional
                         if not inner_optional_flag:
                             raise FileNotFoundError(f"Non-Optional file missing: {name}")
+                        # It is optional, using a dictionary provided to make an empty dataframe with column names.
                         else:
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
                             data = pd.DataFrame(default_dictionary)
