@@ -179,27 +179,29 @@ def input_data(*args, **kwargs):
                         else:
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
                             data = pd.DataFrame(default_dictionary)
-                            duration = None
+                            context.set_data_reference(key, data)
+                            message = f'Loaded default dictionary for {name}'
+                            logger.success(message)
                     else:
                         duration, data = _time_function(settings.input_handler, *[group, name])
-                    if filters is not None:
-                        try:
-                            for filter_function, value in filters.items():
-                                data = filter_function(data, value)
-                        except Exception as e:
-                            error(f"Something went wrong with the filter function: {e}")  # Log the error message
-                            # We want all the flows to run even if one fails.
-                            # After the build is complete we scan the output for `Traceback` and if the key word is found,
-                            # it will throw a fail on Jenkins.
-                            quit()
-                    context.set_data_reference(key, data)
-                    message = ''
-                    # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
-                    if analyze and hasattr(settings, 'analyze_asset_handler'):
-                        message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
-                    if message is None or len(message) == 0:
-                        message = f'Loaded asset: {name} {duration}'
-                    logger.success(message)
+                        if filters is not None:
+                            try:
+                                for filter_function, value in filters.items():
+                                    data = filter_function(data, value)
+                            except Exception as e:
+                                error(f"Something went wrong with the filter function: {e}")  # Log the error message
+                                # We want all the flows to run even if one fails.
+                                # After the build is complete we scan the output for `Traceback` and if the key word is found,
+                                # it will throw a fail on Jenkins.
+                                quit()
+                        context.set_data_reference(key, data)
+                        message = ''
+                        # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
+                        if analyze and hasattr(settings, 'analyze_asset_handler'):
+                            message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
+                        if message is None or len(message) == 0:
+                            message = f'Loaded asset: {name} {duration}'
+                        logger.success(message)
         return wrapper_function
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
