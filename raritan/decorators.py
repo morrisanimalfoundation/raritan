@@ -77,7 +77,9 @@ def flow(*args, **kwargs):
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
                 quit()
+
         return wrapper_function
+
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _flow(args[0])
@@ -125,7 +127,9 @@ def task(*args, **kwargs):
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
                 quit()
+
         return wrapper_function
+
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _task(args[0])
@@ -179,7 +183,11 @@ def input_data(*args, **kwargs):
                         else:
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
                             data = pd.DataFrame(default_dictionary)
+                            print("reached here")
                             context.set_data_reference(key, data)
+                            print("passed")
+                            context.print_all_data_references()
+                            print("------")
                             message = f'Loaded default dictionary for {name}'
                             logger.success(message)
                     else:
@@ -196,11 +204,12 @@ def input_data(*args, **kwargs):
                         message = ''
                         # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
-                            #message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
+                            message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
                         if message is None or len(message) == 0:
                             message = f'Loaded asset: {name} {duration}'
                         logger.success(message)
         return wrapper_function
+
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _input(args[0])
@@ -246,7 +255,9 @@ def output_data(*args, **kwargs):
                         if message is None or len(message) == 0:
                             message = f'Finished output: {key} in format {asset_format} {duration}'
                         logger.success(message)
+
         return wrapper_function
+
     if len(args) > 0 and callable(args[0]):
         return _output(args[0])
     return _output
