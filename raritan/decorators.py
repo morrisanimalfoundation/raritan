@@ -187,7 +187,7 @@ def input_data(*args, **kwargs):
                         else:
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
                             if default_dictionary:
-                                data = pd.DataFrame.from_dict(default_dictionary, orient='index', columns=['dtype'])
+                                data = pd.DataFrame.from_dict(default_dictionary, orient='index', columns=['dtype']).T
                             else:
                                 error('No default dictionary provided.')
                                 quit()
