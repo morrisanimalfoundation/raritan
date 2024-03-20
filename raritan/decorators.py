@@ -160,6 +160,7 @@ def input_data(*args, **kwargs):
             nonlocal filters  # Declare filters as nonlocal to modify the outer variable
             nonlocal optional_flag  # Declare optional_flag as nonlocal to modify the outer variable
             nonlocal analyze  # Declare optional_flag as nonlocal to modify the outer variable
+            nonlocal default_dictionary  # Declare optional_flag as nonlocal to modify the outer variable
             settings = context.get_settings()
             # Get the dictionary describing our input data.
             sources = original_function(*args, **kwargs)
@@ -172,6 +173,7 @@ def input_data(*args, **kwargs):
                         # Grab the filters
                         filters = name.get('filters', None)
                         name = name.get('file')
+                        default_dictionary = name.get('default_dictionary')
                     else:
                         inner_optional_flag = optional_flag  # Use the default optional_flag
                     logger.info(f'Handling asset: {name}')
