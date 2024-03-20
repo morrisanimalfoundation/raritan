@@ -3,7 +3,7 @@ import random
 import sys
 from datetime import datetime
 from functools import wraps
-
+import pandas as pd
 from raritan import logger
 from raritan.context import context
 from raritan.logger import error
@@ -146,7 +146,7 @@ def input_data(*args, **kwargs):
     analyze = kwargs.get('analyze', True)
     optional_flag = kwargs.get('optional', False)
     filters = kwargs.get('filters', None)
-
+    default_dictionary = kwargs.get('default_dictionary', pd.DataFrame())
     def _input(original_function):
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
@@ -174,10 +174,11 @@ def input_data(*args, **kwargs):
                         if not inner_optional_flag:
                             raise FileNotFoundError(f"Non-Optional file missing: {name}")
                         else:
-                            logger.info(f"Optional file missing: {name}")
-                            continue  # Skip processing if file is optional
+                            logger.info(f"Optional file missing: {name}, using default dictionary.")
+                            data = default_dictionary
                     # Pass them on to the input handler.
-                    duration, data = _time_function(settings.input_handler, *[group, name])
+                    else:
+                        duration, data = _time_function(settings.input_handler, *[group, name])
                     if filters is not None:
                         try:
                             for filter_function, value in filters.items():
