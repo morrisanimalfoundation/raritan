@@ -191,14 +191,12 @@ def input_data(*args, **kwargs):
                             except Exception as e:
                                 error(f"Something went wrong with the filter function: {e}")  # Log the error message
                                 # We want all the flows to run even if one fails.
-                                # After the build is complete we scan the output for `Traceback` and if the key word is found,
-                                # it will throw a fail on Jenkins.
                                 quit()
                         context.set_data_reference(key, data)
                         message = ''
                         # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
-                            message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
+                            #message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
                         if message is None or len(message) == 0:
                             message = f'Loaded asset: {name} {duration}'
                         logger.success(message)
