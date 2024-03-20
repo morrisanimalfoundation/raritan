@@ -152,7 +152,7 @@ def input_data(*args, **kwargs):
     analyze = kwargs.get('analyze', True)
     optional_flag = kwargs.get('optional', False)
     filters = kwargs.get('filters', None)
-    default_dictionary = kwargs.get('default_dictionary', pd.DataFrame())
+    default_dictionary = kwargs.get('default_dictionary', dict())
 
     def _input(original_function):
         @wraps(original_function)
@@ -173,7 +173,7 @@ def input_data(*args, **kwargs):
                         # Grab the filters
                         filters = name.get('filters', None)
                         # Grab the dictionary schema
-                        default_dictionary = name.get('default_dictionary', pd.DataFrame())
+                        default_dictionary = name.get('default_dictionary', dict())
                         name = name.get('file')
                     else:
                         inner_optional_flag = optional_flag  # Use the default optional_flag
@@ -186,10 +186,12 @@ def input_data(*args, **kwargs):
                         # It is optional, using a dictionary provided to make an empty dataframe with column names.
                         else:
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
-                            print("this is default dictionary ", default_dictionary)
-                            data = pd.DataFrame(default_dictionary)
+                            if default_dictionary:
+                                data = pd.DataFrame.from_dict(default_dictionary, orient='index', columns=['dtype'])
+                            else:
+                                error('No default dictionary provided.')
+                                quit()
                             context.set_data_reference(key, data)
-                            context.print_all_data_references()
                             message = f'Loaded default dictionary for {name}'
                             logger.success(message)
                     else:
