@@ -183,11 +183,8 @@ def input_data(*args, **kwargs):
                         else:
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
                             data = pd.DataFrame(default_dictionary)
-                            print("reached here")
                             context.set_data_reference(key, data)
-                            print("passed")
                             context.print_all_data_references()
-                            print("------")
                             message = f'Loaded default dictionary for {name}'
                             logger.success(message)
                     else:
