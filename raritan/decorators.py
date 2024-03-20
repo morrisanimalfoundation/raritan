@@ -178,8 +178,8 @@ def input_data(*args, **kwargs):
                             raise FileNotFoundError(f"Non-Optional file missing: {name}")
                         else:
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
-                            data = default_dictionary
-                    # Pass them on to the input handler.
+                            data = pd.DataFrame(default_dictionary)
+                            duration = None
                     else:
                         duration, data = _time_function(settings.input_handler, *[group, name])
                     if filters is not None:
