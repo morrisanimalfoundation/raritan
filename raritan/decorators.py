@@ -172,8 +172,9 @@ def input_data(*args, **kwargs):
                         inner_optional_flag = name.get('optional', False)
                         # Grab the filters
                         filters = name.get('filters', None)
+                        # Grab the dictionary schema
+                        default_dictionary = name.get('default_dictionary', pd.DataFrame())
                         name = name.get('file')
-                        default_dictionary = name.get('default_dictionary')
                     else:
                         inner_optional_flag = optional_flag  # Use the default optional_flag
                     logger.info(f'Handling asset: {name}')
