@@ -3,7 +3,9 @@ import random
 import sys
 from datetime import datetime
 from functools import wraps
+
 import pandas as pd
+
 from raritan import logger
 from raritan.context import context
 from raritan.logger import error
@@ -147,6 +149,7 @@ def input_data(*args, **kwargs):
     optional_flag = kwargs.get('optional', False)
     filters = kwargs.get('filters', None)
     default_dictionary = kwargs.get('default_dictionary', pd.DataFrame())
+
     def _input(original_function):
         @wraps(original_function)
         def wrapper_function(*args, **kwargs):
