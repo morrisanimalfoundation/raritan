@@ -35,8 +35,6 @@ def get_data() -> dict:
             'a_test_fixture': 'test.txt',
             'b_test_fixture': 'test.txt',
             'another_fixture': 'test.txt',
-            'test_dictionary': {'file': 'test_dictionary.csv', 'optional': True},
-            'fake_dictionary': {'file': 'fake_dictionary.csv', 'optional': True}
         },
     }
 
@@ -44,17 +42,42 @@ def get_data() -> dict:
 @input_data
 def get_missing_nonoptional_file() -> dict:
     """
-    A corrupted @input_data implementation for a missing non-optional file.
+    Retrieves a dictionary describing assets, including a missing non-optional file.
 
-    Raises
-    ------
-    ErrorMessage
-       'Non-Optional file missing: missing_nonoptional.csv'
+    Returns
+    -------
+    dict
+        A dictionary describing the assets to be loaded.
     """
     return {
         settings.data_dir: {
-            'missing_nonoptional': {'file': 'missing_nonoptional.csv', 'optional': False}
-        },
+            'missing_nonoptional': {'file': 'missing_nonoptional.csv', 'optional': False},
+        }
+    }
+
+
+@input_data
+def get_missing_optional_file_with_schema() -> dict:
+    """
+    Retrieves a dictionary describing assets, including missing optional files with and without default dictionaries.
+
+    Returns
+    -------
+    dict
+        A dictionary describing the assets to be loaded.
+    """
+    return {
+        settings.data_dir: {
+            'missing_optional': {
+                'file': 'missing_optional.txt',
+                'optional': True,
+                'default_dictionary': {'input': 'string', 'output': 'string'},
+            },
+            'missing_optional_no_default': {
+                'file': 'missing_optional_no_default.txt',
+                'optional': True
+            }
+        }
     }
 
 
@@ -150,14 +173,12 @@ def test_input_decorator() -> None:
     with console.capture() as capture:  # Place console capture context manager here
         try:
             get_data()
-        except TypeError as e:
+        except Exception as e:
             error(f"Error occurred: {e}")  # Log the exception using the error() function
     fixture = context.get_data_reference('test_fixture')
     log_output = capture.get()
     assert 'Handling asset: test.txt' in log_output
     assert 'Loaded asset: ./raritan/tests/fixture/test.txt <1s 9bbb4fc759'
-    assert 'Handling asset: test_dictionary.csv'
-    assert 'Optional file missing: test_dictionary.csv'
     assert fixture
     assert 'A tiny fixture for testing IO.' in fixture
 
@@ -180,9 +201,13 @@ def test_task_decorator() -> None:
     assert b_product == 20
 
 
-def test_error_message_output() -> None:
+def test_input_dictionary_messages() -> None:
     """
-    Test function to verify error message output when a missing non-optional file is encountered.
+    Test function to verify error message output when encountering missing optional files.
+
+    This test captures console output while attempting to retrieve missing optional files
+    with and without default dictionaries. If an exception occurs during the attempt, it is
+    logged using the error() function.
 
     Raises
     ------
@@ -191,14 +216,38 @@ def test_error_message_output() -> None:
     """
     with console.capture() as capture:  # Place console capture context manager here
         try:
-            get_missing_nonoptional_file()
-        except TypeError as e:
+            get_missing_optional_file_with_schema()
+        except Exception as e:
             error(f"Error occurred: {e}")  # Log the exception using the error() function
     log_output = remove_ansi_escape_sequences(capture.get())
-    # Check if the log message "Handling asset: missing_nonoptional.csv" is present
+    assert 'Handling asset: missing_optional.txt' in log_output
+    assert 'Optional file missing: missing_optional.txt, using default dictionary.' in log_output
+    assert 'Loaded default dictionary for missing_optional.txt' in log_output
+    assert "Handling asset: missing_optional_no_default.txt" in log_output
+    assert "Optional file missing: missing_optional_no_default.txt, using default dictionary." in log_output
+    assert "Error occurred: No default dictionary provided." in log_output
+
+
+def test_input_nonoptional_messages() -> None:
+    """
+    Test case to validate handling of missing non-optional files.
+
+    This test captures console output while attempting to get a missing non-optional file.
+    If an exception occurs during the attempt, it is logged using the error() function.
+    The captured output is then checked for the presence of specific log messages.
+
+    Raises:
+        AssertionError: If the expected log messages are not found in the captured output.
+    """
+    with console.capture() as capture:  # Place console capture context manager here
+        try:
+            get_missing_nonoptional_file()
+        except Exception as e:
+            error(f"Error occurred: {e}")  # Log the exception using the error() function
+    log_output = remove_ansi_escape_sequences(capture.get())
     assert 'Handling asset: missing_nonoptional.csv' in log_output
     # Check if the log message "Non-Optional file missing: missing_nonoptional.csv" is present
-    assert 'Non-Optional file missing: missing_nonoptional.csv' in log_output
+    assert 'Error occurred: Non-Optional file missing: missing_nonoptional.csv' in log_output
 
 
 def remove_ansi_escape_sequences(text):

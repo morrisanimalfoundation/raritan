@@ -190,8 +190,7 @@ def input_data(*args, **kwargs):
                                 data = pd.DataFrame(columns=default_dictionary.keys()).astype(
                                     {col: dtype for col, dtype in default_dictionary.items()})
                             else:
-                                error('No default dictionary provided.')
-                                quit()
+                                raise Exception('No default dictionary provided.')
                             context.set_data_reference(key, data)
                             message = f'Loaded default dictionary for {name}'
                             logger.success(message)
