@@ -162,7 +162,6 @@ def input_data(*args, **kwargs):
             settings = context.get_settings()
             # Get the dictionary describing our input data.
             sources = original_function(*args, **kwargs)
-            print(sources.items())
             # Assets are listed in two tiers.
             for group, assets in sources.items():
                 for key, name in assets.items():
@@ -184,12 +183,9 @@ def input_data(*args, **kwargs):
                             raise FileNotFoundError(f"Non-Optional file missing: {name}")
                         # It is optional, using a dictionary provided to make an empty dataframe with column names.
                         else:
-                            print("Start")
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
-                            print("Reached here")
                             if default_dictionary is None:
                                 raise Exception('No default dictionary provided.')
-                            print("passed if")
                             context.set_data_reference(key, default_dictionary)
                             message = f'Loaded default dictionary for {name}'
                             logger.success(message)
