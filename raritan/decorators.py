@@ -178,6 +178,7 @@ def input_data(*args, **kwargs):
                     logger.info(f'Handling asset: {name}')
                     # Check the optional flag
                     if not os.path.exists(group + '/' + name):
+                        print("file does not exist")
                         # It is not optional
                         if not inner_optional_flag:
                             raise FileNotFoundError(f"Non-Optional file missing: {name}")
