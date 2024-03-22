@@ -171,7 +171,7 @@ def input_data(*args, **kwargs):
                         # Grab the filters
                         filters = name.get('filters', None)
                         # Grab the dictionary schema
-                        default_dictionary = name.get('default_dictionary', dict())
+                        default_dictionary = name.get('default_dictionary', None)
                         name = name.get('file')
                     else:
                         inner_optional_flag = optional_flag  # Use the default optional_flag
