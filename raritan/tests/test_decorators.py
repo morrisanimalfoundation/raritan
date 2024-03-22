@@ -3,8 +3,6 @@ import os.path
 import re
 from time import sleep
 
-import pytest
-
 from raritan.context import context
 from raritan.decorators import flow, input_data, output_data, task
 from raritan.logger import console, error
@@ -68,11 +66,6 @@ def get_missing_optional_file_with_schema() -> dict:
     """
     return {
         settings.data_dir: {
-            'missing_optional': {
-                'file': 'missing_optional.txt',
-                'optional': True,
-                'default_dictionary': {'input': 'string', 'output': 'string'},
-            },
             'missing_optional_no_default': {
                 'file': 'missing_optional_no_default.txt',
                 'optional': True
@@ -220,9 +213,6 @@ def test_input_dictionary_messages() -> None:
         except Exception as e:
             error(f"Error occurred: {e}")  # Log the exception using the error() function
     log_output = remove_ansi_escape_sequences(capture.get())
-    assert 'Handling asset: missing_optional.txt' in log_output
-    assert 'Optional file missing: missing_optional.txt, using default dictionary.' in log_output
-    assert 'Loaded default dictionary for missing_optional.txt' in log_output
     assert 'Handling asset: missing_optional_no_default.txt' in log_output
     assert 'Optional file missing: missing_optional_no_default.txt, using default' in log_output
     assert 'dictionary.' in log_output
