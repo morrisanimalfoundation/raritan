@@ -150,7 +150,7 @@ def input_data(*args, **kwargs):
     analyze = kwargs.get('analyze', True)
     optional_flag = kwargs.get('optional', False)
     filters = kwargs.get('filters', None)
-    default_dictionary = kwargs.get('default_dictionary', dict())
+    default_dictionary = kwargs.get('default_dictionary', None)
 
     def _input(original_function):
         @wraps(original_function)
@@ -178,16 +178,13 @@ def input_data(*args, **kwargs):
                     logger.info(f'Handling asset: {name}')
                     # Check the optional flag
                     if not os.path.exists(group + '/' + name):
-                        print("file does not exist")
                         # It is not optional
                         if not inner_optional_flag:
                             raise FileNotFoundError(f"Non-Optional file missing: {name}")
                         # It is optional, using a dictionary provided to make an empty dataframe with column names.
                         else:
-                            print("it went in here")
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
-                            print("what is default dictionary ", default_dictionary)
-                            if not default_dictionary:
+                            if default_dictionary is None:
                                 raise Exception('No default dictionary provided.')
                             context.set_data_reference(key, default_dictionary)
                             message = f'Loaded default dictionary for {name}'

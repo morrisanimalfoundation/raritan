@@ -3,6 +3,8 @@ import os.path
 import re
 from time import sleep
 
+import pandas as pd
+
 from raritan.context import context
 from raritan.decorators import flow, input_data, output_data, task
 from raritan.logger import console, error
@@ -37,7 +39,7 @@ def get_data() -> dict:
     }
 
 
-@input_data
+@input_data(parallel=False)
 def get_missing_nonoptional_file() -> dict:
     """
     Retrieves a dictionary describing assets, including a missing non-optional file.
@@ -54,7 +56,11 @@ def get_missing_nonoptional_file() -> dict:
     }
 
 
-@input_data
+poison_exposure_dictionary = {'input_substance': 'string', 'output_substance': 'string', 'drop': 'Int64', 'resolved': 'Int64'}
+poison_exposure_dictionary_df = pd.DataFrame(columns=poison_exposure_dictionary.keys()).astype(poison_exposure_dictionary)
+
+
+@input_data(parallel=False)
 def get_missing_optional_file_with_schema() -> dict:
     """
     Retrieves a dictionary describing assets, including missing optional files with and without default dictionaries.
@@ -66,9 +72,10 @@ def get_missing_optional_file_with_schema() -> dict:
     """
     return {
         settings.data_dir: {
-            'missing_optional_no_default': {
-                'file': 'missing_optional_no_default.txt',
-                'optional': True
+            'poison_exposure_dictionary': {
+                'optional': True,
+                'file': 'poison_substance_dictionary.csv',
+                'default_dictionary': poison_exposure_dictionary_df
             }
         }
     }
