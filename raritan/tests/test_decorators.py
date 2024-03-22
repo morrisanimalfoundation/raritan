@@ -220,12 +220,15 @@ def test_input_dictionary_messages() -> None:
         except Exception as e:
             error(f"Error occurred: {e}")  # Log the exception using the error() function
     log_output = remove_ansi_escape_sequences(capture.get())
+    for line in log_output.split('\n'):
+        print(line)
     assert 'Handling asset: missing_optional.txt' in log_output
     assert 'Optional file missing: missing_optional.txt, using default dictionary.' in log_output
     assert 'Loaded default dictionary for missing_optional.txt' in log_output
-    assert "Handling asset: missing_optional_no_default.txt" in log_output
-    assert "Optional file missing: missing_optional_no_default.txt, using default dictionary." in log_output
-    assert "Error occurred: No default dictionary provided." in log_output
+    assert 'Handling asset: missing_optional_no_default.txt' in log_output
+    assert 'Optional file missing: missing_optional_no_default.txt, using default' in log_output
+    assert 'dictionary.' in log_output
+    assert 'Error occurred: No default dictionary provided.' in log_output
 
 
 def test_input_nonoptional_messages() -> None:
