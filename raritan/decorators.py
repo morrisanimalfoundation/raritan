@@ -183,6 +183,7 @@ def input_data(*args, **kwargs):
                             raise FileNotFoundError(f"Non-Optional file missing: {name}")
                         # It is optional, using a dictionary provided to make an empty dataframe with column names.
                         else:
+                            print("it went in here")
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
                             print("what is default dictionary ", default_dictionary)
                             if not default_dictionary:
