@@ -4,8 +4,6 @@ import sys
 from datetime import datetime
 from functools import wraps
 
-import pandas as pd
-
 from raritan import logger
 from raritan.context import context
 from raritan.logger import error
