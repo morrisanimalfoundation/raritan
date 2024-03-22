@@ -162,6 +162,7 @@ def input_data(*args, **kwargs):
             settings = context.get_settings()
             # Get the dictionary describing our input data.
             sources = original_function(*args, **kwargs)
+            print(sources.items())
             # Assets are listed in two tiers.
             for group, assets in sources.items():
                 for key, name in assets.items():
