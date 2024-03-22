@@ -3,8 +3,6 @@ import os.path
 import re
 from time import sleep
 
-import pandas as pd
-
 from raritan.context import context
 from raritan.decorators import flow, input_data, output_data, task
 from raritan.logger import console, error
@@ -56,12 +54,8 @@ def get_missing_nonoptional_file() -> dict:
     }
 
 
-poison_exposure_dictionary = {'input_substance': 'string', 'output_substance': 'string', 'drop': 'Int64', 'resolved': 'Int64'}
-poison_exposure_dictionary_df = pd.DataFrame(columns=poison_exposure_dictionary.keys()).astype(poison_exposure_dictionary)
-
-
 @input_data(parallel=False)
-def get_missing_optional_file_with_schema() -> dict:
+def get_missing_optional_file_without_schema() -> dict:
     """
     Retrieves a dictionary describing assets, including missing optional files with and without default dictionaries.
 
@@ -72,10 +66,9 @@ def get_missing_optional_file_with_schema() -> dict:
     """
     return {
         settings.data_dir: {
-            'poison_exposure_dictionary': {
+            'missing_optional': {
                 'optional': True,
-                'file': 'poison_substance_dictionary.csv',
-                'default_dictionary': poison_exposure_dictionary_df
+                'file': 'missing_optional.csv',
             }
         }
     }
@@ -216,13 +209,12 @@ def test_input_dictionary_messages() -> None:
     """
     with console.capture() as capture:  # Place console capture context manager here
         try:
-            get_missing_optional_file_with_schema()
+            get_missing_optional_file_without_schema()
         except Exception as e:
             error(f"Error occurred: {e}")  # Log the exception using the error() function
     log_output = remove_ansi_escape_sequences(capture.get())
-    assert 'Handling asset: missing_optional_no_default.txt' in log_output
-    assert 'Optional file missing: missing_optional_no_default.txt, using default' in log_output
-    assert 'dictionary.' in log_output
+    assert 'Handling asset: missing_optional.csv' in log_output
+    assert 'Optional file missing: missing_optional.csv, using default dictionary.' in log_output
     assert 'Error occurred: No default dictionary provided.' in log_output
 
 
