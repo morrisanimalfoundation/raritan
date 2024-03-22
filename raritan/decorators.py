@@ -184,6 +184,7 @@ def input_data(*args, **kwargs):
                         # It is optional, using a dictionary provided to make an empty dataframe with column names.
                         else:
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
+                            print("what is default dictionary ", default_dictionary)
                             if not default_dictionary:
                                 raise Exception('No default dictionary provided.')
                             context.set_data_reference(key, default_dictionary)
