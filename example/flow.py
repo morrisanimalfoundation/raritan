@@ -36,6 +36,7 @@ def get_data() -> dict:
         settings.dictionary_dir: {
             'labs_dictionary': {
                 'optional': True,
+                'default_dictionary': pd.DataFrame(columns=['input', 'output']),
                 'file': 'multi_column_dictionary_labs.csv',
             }
         }

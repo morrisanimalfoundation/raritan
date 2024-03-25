@@ -75,7 +75,9 @@ def flow(*args, **kwargs):
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
                 quit()
+
         return wrapper_function
+
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _flow(args[0])
@@ -123,7 +125,9 @@ def task(*args, **kwargs):
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
                 quit()
+
         return wrapper_function
+
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _task(args[0])
@@ -146,6 +150,7 @@ def input_data(*args, **kwargs):
     analyze = kwargs.get('analyze', True)
     optional_flag = kwargs.get('optional', False)
     filters = kwargs.get('filters', None)
+    default_dictionary = kwargs.get('default_dictionary', None)
 
     def _input(original_function):
         @wraps(original_function)
@@ -153,6 +158,7 @@ def input_data(*args, **kwargs):
             nonlocal filters  # Declare filters as nonlocal to modify the outer variable
             nonlocal optional_flag  # Declare optional_flag as nonlocal to modify the outer variable
             nonlocal analyze  # Declare optional_flag as nonlocal to modify the outer variable
+            nonlocal default_dictionary  # Declare optional_flag as nonlocal to modify the outer variable
             settings = context.get_settings()
             # Get the dictionary describing our input data.
             sources = original_function(*args, **kwargs)
@@ -164,6 +170,8 @@ def input_data(*args, **kwargs):
                         inner_optional_flag = name.get('optional', False)
                         # Grab the filters
                         filters = name.get('filters', None)
+                        # Grab the dictionary schema
+                        default_dictionary = name.get('default_dictionary', None)
                         name = name.get('file')
                     else:
                         inner_optional_flag = optional_flag  # Use the default optional_flag
@@ -173,30 +181,34 @@ def input_data(*args, **kwargs):
                         # It is not optional
                         if not inner_optional_flag:
                             raise FileNotFoundError(f"Non-Optional file missing: {name}")
+                        # It is optional, using a dictionary provided to make an empty dataframe with column names.
                         else:
-                            logger.info(f"Optional file missing: {name}")
-                            continue  # Skip processing if file is optional
-                    # Pass them on to the input handler.
-                    duration, data = _time_function(settings.input_handler, *[group, name])
-                    if filters is not None:
-                        try:
-                            for filter_function, value in filters.items():
-                                data = filter_function(data, value)
-                        except Exception as e:
-                            error(f"Something went wrong with the filter function: {e}")  # Log the error message
-                            # We want all the flows to run even if one fails.
-                            # After the build is complete we scan the output for `Traceback` and if the key word is found,
-                            # it will throw a fail on Jenkins.
-                            quit()
-                    context.set_data_reference(key, data)
-                    message = ''
-                    # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
-                    if analyze and hasattr(settings, 'analyze_asset_handler'):
-                        message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
-                    if message is None or len(message) == 0:
-                        message = f'Loaded asset: {name} {duration}'
-                    logger.success(message)
+                            logger.info(f"Optional file missing: {name}, using default dictionary.")
+                            if default_dictionary is None:
+                                raise Exception('No default dictionary provided.')
+                            context.set_data_reference(key, default_dictionary)
+                            message = f'Loaded default dictionary for {name}'
+                            logger.success(message)
+                    else:
+                        duration, data = _time_function(settings.input_handler, *[group, name])
+                        if filters is not None:
+                            try:
+                                for filter_function, value in filters.items():
+                                    data = filter_function(data, value)
+                            except Exception as e:
+                                error(f"Something went wrong with the filter function: {e}")  # Log the error message
+                                # We want all the flows to run even if one fails.
+                                quit()
+                        context.set_data_reference(key, data)
+                        message = ''
+                        # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
+                        if analyze and hasattr(settings, 'analyze_asset_handler'):
+                            message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
+                        if message is None or len(message) == 0:
+                            message = f'Loaded asset: {name} {duration}'
+                        logger.success(message)
         return wrapper_function
+
     # If no arguments are passed to the decorator, return the wrapper one level down.
     if len(args) > 0 and callable(args[0]):
         return _input(args[0])
@@ -242,7 +254,9 @@ def output_data(*args, **kwargs):
                         if message is None or len(message) == 0:
                             message = f'Finished output: {key} in format {asset_format} {duration}'
                         logger.success(message)
+
         return wrapper_function
+
     if len(args) > 0 and callable(args[0]):
         return _output(args[0])
     return _output
