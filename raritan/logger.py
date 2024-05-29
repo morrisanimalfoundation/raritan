@@ -90,8 +90,10 @@ def error(message, **kwargs) -> None:
         last_file_line, next_line = get_last_file_and_next_line(traceback_part)
         console.print("------------", style='red')
         console.print(last_file_line, style='red')
-        console.print(f"{message}", style='red')
+        console.print(f"Error occurred: {message}", style='red')
         console.print("Corrupt Code:", next_line, style='red')
         console.print("Variables")
         console.print(context.print_all_data_references(), style='red')
         console.print("------------", style='red')
+    if context.exit_on_error:
+        exit(1)
