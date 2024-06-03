@@ -28,6 +28,8 @@ class Context(object):
     current_task = None
     # Disable logging/output.
     no_logging = False
+    # Disable logging/output.
+    exit_on_error = True
     # The namespace to find ETL settings.
     settings_module = 'settings'
 
@@ -74,6 +76,17 @@ class Context(object):
             Whether the logger produced by core.logger should produce output.
         """
         self.no_logging = no_logging
+
+    def set_exit_on_error(self, exit_on_error: bool) -> None:
+        """
+        Setter for the exit behavior.
+
+        Parameters
+        ----------
+        exit_on_error: str
+            Whether the system should exit(1) the process on error.
+        """
+        self.exit_on_error = exit_on_error
 
     def set_data_reference(self, name: str, data_source) -> None:
         """

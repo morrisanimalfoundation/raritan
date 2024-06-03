@@ -13,6 +13,7 @@ Tests decorators and other basic functionality.
 
 # Load the test settings module.
 context.set_settings_module('raritan.test_settings')
+context.set_exit_on_error(False)
 
 settings = context.get_settings()
 
@@ -54,7 +55,7 @@ def get_missing_nonoptional_file() -> dict:
     }
 
 
-@input_data(parallel=False)
+@input_data
 def get_missing_optional_file_without_schema() -> dict:
     """
     Retrieves a dictionary describing assets, including missing optional files with and without default dictionaries.
@@ -208,10 +209,7 @@ def test_input_dictionary_messages() -> None:
         If the expected error messages are not found in the log output.
     """
     with console.capture() as capture:  # Place console capture context manager here
-        try:
-            get_missing_optional_file_without_schema()
-        except Exception as e:
-            error(f"Error occurred: {e}")  # Log the exception using the error() function
+        get_missing_optional_file_without_schema()
     log_output = remove_ansi_escape_sequences(capture.get())
     assert 'Handling asset: missing_optional.csv' in log_output
     assert 'Optional file missing: missing_optional.csv, using default dictionary.' in log_output
@@ -230,10 +228,7 @@ def test_input_nonoptional_messages() -> None:
         AssertionError: If the expected log messages are not found in the captured output.
     """
     with console.capture() as capture:  # Place console capture context manager here
-        try:
-            get_missing_nonoptional_file()
-        except Exception as e:
-            error(f"Error occurred: {e}")  # Log the exception using the error() function
+        get_missing_nonoptional_file()
     log_output = remove_ansi_escape_sequences(capture.get())
     assert 'Handling asset: missing_nonoptional.csv' in log_output
     # Check if the log message "Non-Optional file missing: missing_nonoptional.csv" is present

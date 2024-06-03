@@ -70,11 +70,7 @@ def flow(*args, **kwargs):
                 logger.success(f'Completed flow run! :{emoji}:')
                 logger.info(f'Total duration {duration}')
             except Exception as e:
-                error(f"Error occurred: {e}")  # Log the error message
-                # We want all the flows to run even if one fails.
-                # After the build is complete we scan the output for `Traceback` and if the key word is found,
-                # it will throw a fail on Jenkins.
-                quit()
+                error(e)
 
         return wrapper_function
 
@@ -120,11 +116,10 @@ def task(*args, **kwargs):
                 logger.success(f'Completed task: {task_description} {duration}')
                 return output
             except Exception as e:
-                error(f"Error occurred: {e}")  # Log the error message
+                error(e)  # Log the error message
                 # We want all the flows to run even if one fails.
                 # After the build is complete we scan the output for `Traceback` and if the key word is found,
                 # it will throw a fail on Jenkins.
-                quit()
 
         return wrapper_function
 
@@ -180,33 +175,43 @@ def input_data(*args, **kwargs):
                     if not os.path.exists(group + '/' + name):
                         # It is not optional
                         if not inner_optional_flag:
-                            raise FileNotFoundError(f"Non-Optional file missing: {name}")
+                            error(f'Non-Optional file missing: {name}')
+
                         # It is optional, using a dictionary provided to make an empty dataframe with column names.
                         else:
                             logger.info(f"Optional file missing: {name}, using default dictionary.")
                             if default_dictionary is None:
-                                raise Exception('No default dictionary provided.')
+                                error('No default dictionary provided.')
+
                             context.set_data_reference(key, default_dictionary)
                             message = f'Loaded default dictionary for {name}'
                             logger.success(message)
                     else:
-                        duration, data = _time_function(settings.input_handler, *[group, name])
+                        try:
+                            duration, data = _time_function(settings.input_handler, *[group, name])
+                        except Exception as e:
+                            error(f'Something went wrong with the input handler: {e}')
+
                         if filters is not None:
                             try:
                                 for filter_function, value in filters.items():
                                     data = filter_function(data, value)
                             except Exception as e:
-                                error(f"Something went wrong with the filter function: {e}")  # Log the error message
-                                # We want all the flows to run even if one fails.
-                                quit()
+                                error(f'Something went wrong with the filter function: {e}')
+
                         context.set_data_reference(key, data)
                         message = ''
                         # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
-                            message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
+                            try:
+                                message = settings.analyze_asset_handler(group, name, None, data, duration, 'input')
+                            except Exception as e:
+                                error(f'Something went wrong with the analysis handler: {e}')
+
                         if message is None or len(message) == 0:
                             message = f'Loaded asset: {name} {duration}'
                         logger.success(message)
+
         return wrapper_function
 
     # If no arguments are passed to the decorator, return the wrapper one level down.
@@ -245,12 +250,21 @@ def output_data(*args, **kwargs):
                     # Iterate over the extensions and allow each one to be processed by the output handler.
                     for asset_format in asset['formats']:
                         logger.info(f'Beginning output: {key} in format {asset_format}')
-                        duration = _time_function(settings.output_handler, *[group, key, asset_format, data],
-                                                  **asset['output_kwargs'])[0]
+                        try:
+                            duration = _time_function(settings.output_handler, *[group, key, asset_format, data],
+                                                      **asset['output_kwargs'])[0]
+                        except Exception as e:
+                            error(f'Something went wrong with the output handler: {e}')
+
                         # Allow an analyze_asset_handler to ensure integrity and/or write the logging.
                         message = ''
                         if analyze and hasattr(settings, 'analyze_asset_handler'):
-                            message = settings.analyze_asset_handler(group, key, asset_format, data, duration, 'output')
+                            try:
+                                message = settings.analyze_asset_handler(group, key, asset_format, data, duration,
+                                                                         'output')
+                            except Exception as e:
+                                error(f'Something went wrong with the analysis handler: {e}')
+
                         if message is None or len(message) == 0:
                             message = f'Finished output: {key} in format {asset_format} {duration}'
                         logger.success(message)
